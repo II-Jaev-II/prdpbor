@@ -1,10 +1,16 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import '../../vendor/power-components/livewire-powergrid/resources/css/tailwind4.css';
+@import "flatpickr/dist/flatpickr.min.css";
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+@source '../../app/Livewire/*Table.php';
+@source '../../app/Livewire/**/*Table.php';
+@source '../../vendor/power-components/livewire-powergrid/src/Themes/Tailwind.php';
+@source '../../vendor/power-components/livewire-powergrid/resources/views/**/*.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -22,6 +28,18 @@
     --color-zinc-800: #262626;
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
+
+    --color-pg-primary-50: oklch(0.985 0 0);
+    --color-pg-primary-100: oklch(0.97 0 0);
+    --color-pg-primary-200: oklch(0.922 0 0);
+    --color-pg-primary-300: oklch(0.87 0 0);
+    --color-pg-primary-400: oklch(0.708 0 0);
+    --color-pg-primary-500: oklch(0.556 0 0);
+    --color-pg-primary-600: oklch(0.439 0 0);
+    --color-pg-primary-700: oklch(0.371 0 0);
+    --color-pg-primary-800: oklch(0.269 0 0);
+    --color-pg-primary-900: oklch(0.205 0 0);
+    --color-pg-primary-950: oklch(0.145 0 0);
 
     --color-accent: var(--color-neutral-800);
     --color-accent-content: var(--color-neutral-800);
@@ -52,13 +70,60 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+/* PowerGrid Dark Mode Styling */
+#pendingTable table {
+    @apply border border-neutral-200 dark:border-neutral-700;
+}
+
+#pendingTable thead {
+    @apply bg-neutral-50 dark:bg-neutral-800;
+}
+
+#pendingTable thead th {
+    @apply text-gray-700 dark:text-gray-300 font-semibold;
+}
+
+#pendingTable tbody {
+    @apply bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-700;
+}
+
+#pendingTable tbody tr {
+    @apply hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors;
+}
+
+#pendingTable tbody tr:nth-child(odd) {
+    @apply bg-white dark:bg-neutral-900;
+}
+
+#pendingTable tbody tr:nth-child(even) {
+    @apply bg-neutral-50 dark:bg-neutral-800/30;
+}
+
+#pendingTable tbody td {
+    @apply text-gray-900 dark:text-gray-100;
+}
+
+#pendingTable .pg-empty-state {
+    @apply text-gray-500 dark:text-gray-400;
+}
+
+#pendingTable input[type="text"],
+#pendingTable input[type="search"],
+#pendingTable select {
+    @apply bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-gray-900 dark:text-gray-100;
+}
+
+#pendingTable input[type="checkbox"] {
+    @apply border-neutral-300 dark:border-neutral-600;
 }
 
 /* \[:where(&)\]:size-4 {

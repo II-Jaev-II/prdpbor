@@ -12,7 +12,9 @@ class BackToOfficeReport extends Model
 
     protected $fillable = [
         'user_id',
-        'date_of_travel',
+        'report_num',
+        'start_date',
+        'end_date',
         'purpose',
         'place',
         'accomplishment',
@@ -21,7 +23,8 @@ class BackToOfficeReport extends Model
     ];
 
     protected $casts = [
-        'date_of_travel' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'photos' => 'array',
     ];
 

@@ -1,5 +1,8 @@
 <?php
 
+use App\Livewire\ApprovedReports;
+use App\Livewire\BackToOfficeReport;
+use App\Livewire\PendingReports;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -32,6 +35,13 @@ Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
+});
+
+// Routes accessible by both users and superiors
+Route::middleware(['auth', 'role:user,superior'])->group(function () {
+    Route::get('/back-to-office-report', BackToOfficeReport::class)->name('back-to-office-report');
+    Route::get('/pending-reports', PendingReports::class)->name('pending-reports');
+    Route::get('/approved-reports', ApprovedReports::class)->name('approved-reports');
 });
 
 Route::middleware(['auth'])->group(function () {
