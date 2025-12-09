@@ -74,12 +74,12 @@
                         wire:model="reports.{{ $index }}.purpose"
                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
                         <option value="">Select Purpose</option>
-                        <option value="official_meeting">Official Meeting</option>
-                        <option value="field_visit">Field Visit</option>
-                        <option value="training">Training</option>
-                        <option value="inspection">Inspection</option>
-                        <option value="conference">Conference</option>
-                        <option value="other">Other</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Field Visit">Field Visit</option>
+                        <option value="Training">Training</option>
+                        <option value="Inspection">Inspection</option>
+                        <option value="Conference">Conference</option>
+                        <option value="Other">Other</option>
                     </select>
                     @error('reports.'.$index.'.purpose')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

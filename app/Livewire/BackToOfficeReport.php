@@ -105,7 +105,7 @@ class BackToOfficeReport extends Component
                 $endDate = trim($dates[1]);
             } else {
                 $startDate = $dateOfTravel;
-                $endDate = null;
+                $endDate = $dateOfTravel;
             }
 
             // Save to database
@@ -118,7 +118,7 @@ class BackToOfficeReport extends Component
                 'place' => $report['place'],
                 'accomplishment' => $report['accomplishment'],
                 'photos' => $photoPaths,
-                'status' => 'pending',
+                'status' => 'Pending',
             ]);
         }
 

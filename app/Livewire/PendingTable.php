@@ -41,8 +41,12 @@ final class PendingTable extends PowerGridComponent
     {
         return PowerGrid::fields()
             ->add('report_num')
-            ->add('start_date_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->start_date)->format('d/m/Y'))
-            ->add('end_date_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->end_date)->format('d/m/Y'))
+            ->add('start_date_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->start_date)->format('F j, Y'))
+            ->add(
+                'end_date_formatted',
+                fn(BackToOfficeReport $model) =>
+                $model->end_date ? Carbon::parse($model->end_date)->format('F j, Y') : Carbon::parse($model->start_date)->format('F j, Y')
+            )
             ->add('purpose')
             ->add('place')
             ->add('accomplishment')
@@ -52,14 +56,14 @@ final class PendingTable extends PowerGridComponent
     public function columns(): array
     {
         return [
-            Column::make('Report num', 'report_num')
+            Column::make('Report #', 'report_num')
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Start date', 'start_date_formatted', 'start_date')
+            Column::make('Start Date', 'start_date_formatted', 'start_date')
                 ->sortable(),
 
-            Column::make('End date', 'end_date_formatted', 'end_date')
+            Column::make('End Date', 'end_date_formatted', 'end_date')
                 ->sortable(),
 
             Column::make('Purpose', 'purpose')
@@ -91,12 +95,6 @@ final class PendingTable extends PowerGridComponent
         ];
     }
 
-    #[\Livewire\Attributes\On('edit')]
-    public function edit($rowId): void
-    {
-        $this->js('alert(' . $rowId . ')');
-    }
-
     public function actions(BackToOfficeReport $row): array
     {
         return [
@@ -104,7 +102,7 @@ final class PendingTable extends PowerGridComponent
                 ->slot('Edit')
                 ->id()
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('edit', ['rowId' => $row->id])
+                ->dispatch('editReport', ['rowId' => $row->id])
         ];
     }
 }
