@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\ApprovalReports;
 use App\Livewire\ApprovedReports;
 use App\Livewire\BackToOfficeReport;
 use App\Livewire\PendingReports;
@@ -30,7 +31,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior.')->group(function () {
-    Route::view('/dashboard', 'dashboards.superior')->name('dashboard');
+    Route::view('/dashboard', 'dashboards.user')->name('dashboard');
+    Route::get('/approval-reports', ApprovalReports::class)->name('approval-reports');
 });
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {

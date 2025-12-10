@@ -17,6 +17,7 @@
                         </label>
                         <div wire:ignore x-data="{ 
                             picker: null,
+                            dateValue: @entangle('editForm.date_of_travel').live,
                             init() {
                                 this.$nextTick(() => {
                                     this.picker = flatpickr(this.$refs.datePicker, {
@@ -27,22 +28,22 @@
                                         altFormat: 'F j, Y',
                                         appendTo: this.$root,
                                         static: false,
-                                        defaultDate: @entangle('editForm.date_of_travel').live,
-                                        onChange: function(selectedDates, dateStr) {
-                                            $wire.set('editForm.date_of_travel', dateStr);
-                                        }
-                                    });
-                                    
-                                    // Watch for Livewire updates and set flatpickr value
-                                    Livewire.hook('morph.updated', () => {
-                                        const dateValue = $wire.get('editForm.date_of_travel');
-                                        if (dateValue && this.picker) {
-                                            this.picker.setDate(dateValue.split(' to '), false);
+                                        onChange: (selectedDates, dateStr) => {
+                                            this.dateValue = dateStr;
                                         }
                                     });
                                 });
+                            },
+                            destroy() {
+                                if (this.picker) {
+                                    this.picker.destroy();
+                                    this.picker = null;
+                                }
                             }
-                        }">
+                        }" 
+                        x-on:modal-close.window="destroy()"
+                        x-watch="dateValue" 
+                        x-effect="if (picker && dateValue) { picker.setDate(dateValue.split(' to '), false); }">
                             <input
                                 type="text"
                                 x-ref="datePicker"

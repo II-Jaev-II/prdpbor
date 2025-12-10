@@ -13,12 +13,13 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 
-final class PendingTable extends PowerGridComponent
+final class ForApprovalTable extends PowerGridComponent
 {
-    public string $tableName = 'pendingTable';
+    public string $tableName = 'forApprovalTable';
 
     public function setUp(): array
     {
+
         return [
             PowerGrid::header()
                 ->showSearchInput(),
@@ -31,7 +32,14 @@ final class PendingTable extends PowerGridComponent
     public function datasource(): Builder
     {
         return BackToOfficeReport::query()
-            ->where('user_id', Auth::id());
+            ->whereHas('user', function ($query) {
+                $query->where('unit_component', Auth::user()->superior_role);
+            })
+            ->with('user')
+            ->select('report_num', 'status', 'user_id')
+            ->selectRaw('MIN(id) as id')
+            ->selectRaw('COUNT(*) as reports_count')
+            ->groupBy('report_num', 'status', 'user_id');
     }
 
     public function relationSearch(): array
@@ -43,36 +51,19 @@ final class PendingTable extends PowerGridComponent
     {
         return PowerGrid::fields()
             ->add('report_num')
-            ->add('start_date_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->start_date)->format('F j, Y'))
-            ->add(
-                'end_date_formatted',
-                fn(BackToOfficeReport $model) =>
-                $model->end_date ? Carbon::parse($model->end_date)->format('F j, Y') : Carbon::parse($model->start_date)->format('F j, Y')
-            )
-            ->add('purpose')
-            ->add('place')
-            ->add('accomplishment')
-            ->add('status');
+            ->add('user_name', fn($row) => $row->user->name ?? 'Unknown')
+            ->add('status')
+            ->add('reports_count', fn($row) => $row->reports_count ?? 1);
     }
 
     public function columns(): array
     {
         return [
-            Column::make('Report #', 'report_num')
+            Column::make('Report Number', 'report_num')
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Start Date', 'start_date_formatted', 'start_date')
-                ->sortable(),
-
-            Column::make('End Date', 'end_date_formatted', 'end_date')
-                ->sortable(),
-
-            Column::make('Purpose', 'purpose')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Place', 'place')
+            Column::make('Submitted By', 'user_name')
                 ->sortable()
                 ->searchable(),
 
@@ -87,24 +78,29 @@ final class PendingTable extends PowerGridComponent
     public function filters(): array
     {
         return [
-            Filter::datepicker('start_date', 'end_date')
-                ->params([
-                    'mode' => 'range',
-                    'enableTime' => false,
-                    'altInput' => true,
-                    'altFormat' => 'F j, Y'
-                ]),
+            Filter::datepicker('start_date'),
+            Filter::datepicker('end_date'),
         ];
+    }
+
+    #[\Livewire\Attributes\On('edit')]
+    public function edit($rowId): void
+    {
+        // Get the report_num from the rowId
+        $report = BackToOfficeReport::find($rowId);
+        if ($report) {
+            $this->dispatch('viewReports', reportNum: $report->report_num);
+        }
     }
 
     public function actions(BackToOfficeReport $row): array
     {
         return [
             Button::add('edit')
-                ->slot('Edit')
+                ->slot('View')
                 ->id()
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('editReport', ['rowId' => $row->id])
+                ->dispatch('edit', ['rowId' => $row->id])
         ];
     }
 }
