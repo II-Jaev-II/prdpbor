@@ -3,6 +3,7 @@
 use App\Livewire\ApprovalReports;
 use App\Livewire\ApprovedReports;
 use App\Livewire\BackToOfficeReport;
+use App\Livewire\EnrollActivity;
 use App\Livewire\PendingReports;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
@@ -37,6 +38,7 @@ Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
+    Route::get('/enroll-activity', EnrollActivity::class)->name('enroll-activity');
 });
 
 // Routes accessible by both users and superiors

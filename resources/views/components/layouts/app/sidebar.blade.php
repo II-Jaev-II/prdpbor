@@ -19,6 +19,9 @@
                     @if (auth()->user()->superior_role)
                     <flux:navlist.item icon="document-check" :href="route('superior.approval-reports')" :current="request()->routeIs('superior.approval-reports')" wire:navigate>{{ __('For Approval Reports') }}</flux:navlist.item>
                     @endif
+                    @if (auth()->user()->unit_component === 'ADMIN')
+                    <flux:navlist.item icon="document-check" :href="route('user.enroll-activity')" :current="request()->routeIs('user.enroll-activity')" wire:navigate>{{ __('Enroll an Activity') }}</flux:navlist.item>
+                    @endif
                 </flux:navlist.group>
             </flux:navlist>
 
