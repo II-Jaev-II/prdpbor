@@ -1,3 +1,217 @@
-<div>
-    {{-- The whole world belongs to you. --}}
+<div class="flex h-full w-full flex-1 flex-col gap-6 rounded-xl">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Enroll Activity</h1>
+    </div>
+
+    @if (session()->has('success'))
+    <div class="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ session('success') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <form wire:submit="submit" class="space-y-6">
+        @foreach ($activities as $index => $activity)
+        <div class="relative overflow-hidden rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    Activity #{{ $index + 1 }}
+                </h2>
+                @if (count($activities) > 1)
+                <button
+                    type="button"
+                    wire:click="removeActivity({{ $index }})"
+                    class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-600 dark:bg-neutral-800 dark:text-red-400 dark:hover:bg-neutral-700">
+                    Remove
+                </button>
+                @endif
+            </div>
+
+            <div class="space-y-6">
+                <!-- Name of Activity -->
+                <div>
+                    <label for="activity_name_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Name of Activity <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="activity_name_{{ $index }}"
+                        wire:model="activities.{{ $index }}.activity_name"
+                        placeholder="Enter activity name"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                    @error('activities.'.$index.'.activity_name')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Component -->
+                <div>
+                    <label for="unit_component_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Component <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="unit_component_{{ $index }}"
+                        wire:model="activities.{{ $index }}.unit_component"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
+                        <option value="">Select Component</option>
+                        <option value="IBUILD">IBUILD</option>
+                        <option value="IREAP">IREAP</option>
+                        <option value="IPLAN">IPLAN</option>
+                        <option value="ISUPPORT">ISUPPORT</option>
+                    </select>
+                    @error('activities.'.$index.'.unit_component')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Purpose -->
+                <div>
+                    <label for="purpose_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Purpose <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="purpose_{{ $index }}"
+                        wire:model.live="activities.{{ $index }}.purpose"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
+                        <option value="">Select Purpose</option>
+                        <option value="Site Specific">Site Specific</option>
+                        <option value="Non Site Specific">Non Site Specific</option>
+                    </select>
+                    @error('activities.'.$index.'.purpose')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Purpose Type (conditionally shown) -->
+                @if(!empty($activity['purpose']))
+                <div>
+                    <label for="purpose_type_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Purpose Type <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="purpose_type_{{ $index }}"
+                        wire:model.live="activities.{{ $index }}.purpose_type"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
+                        <option value="">Select Purpose Type</option>
+                        @if($activity['purpose'] == 'Site Specific')
+                            <option value="JIT">JIT</option>
+                            <option value="Validation">Validation</option>
+                        @elseif($activity['purpose'] == 'Non Site Specific')
+                            <option value="Meeting">Meeting</option>
+                            <option value="Training">Training</option>
+                        @endif
+                    </select>
+                    @error('activities.'.$index.'.purpose_type')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @endif
+
+                <!-- Subproject List (conditionally shown for Site Specific) -->
+                @if(!empty($activity['purpose_type']) && $activity['purpose_type'] !== 'Validation')
+                <div>
+                    <label for="subproject_id_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Subproject <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                        id="subproject_id_{{ $index }}"
+                        wire:model="activities.{{ $index }}.subproject_id"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
+                        <option value="">Select Subproject</option>
+                        @foreach($subprojects as $subproject)
+                            <option value="{{ $subproject->id }}">{{ $subproject->subproject_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('activities.'.$index.'.subproject_id')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @elseif(!empty($activity['purpose_type']) && $activity['purpose_type'] == 'Validation')
+                <!-- Show a textbox instead of dropdown of subproject list -->
+                <div>
+                    <label for="subproject_name_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Subproject Name <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="subproject_name_{{ $index }}"
+                        wire:model="activities.{{ $index }}.subproject_name"
+                        placeholder="Enter subproject name"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                    @error('activities.'.$index.'.subproject_name')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @endif
+
+                <!-- Duration of Travel -->
+                <div>
+                    <label for="travel_duration_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Duration of Travel <span class="text-red-500">*</span>
+                    </label>
+                    <div wire:ignore>
+                        <input
+                            type="text"
+                            id="travel_duration_{{ $index }}"
+                            wire:model="activities.{{ $index }}.travel_duration"
+                            x-data
+                            x-init="flatpickr($el, {
+                                    mode: 'range',
+                                    dateFormat: 'Y-m-d',
+                                    enableTime: false,
+                                    altInput: true,
+                                    altFormat: 'F j, Y',
+                                    onChange: function(selectedDates, dateStr) {
+                                        $wire.set('activities.{{ $index }}.travel_duration', dateStr);
+                                    }
+                                })"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
+                    </div>
+                    @error('activities.'.$index.'.travel_duration')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+        @endforeach
+
+        <!-- Add More Activity Button -->
+        <div class="flex justify-center">
+            <button
+                type="button"
+                wire:click="addActivity"
+                class="rounded-lg border-2 border-dashed border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:bg-neutral-700 dark:hover:text-blue-400">
+                <svg class="inline-block h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Another Activity
+            </button>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end gap-3 pt-4">
+            <button
+                type="button"
+                wire:click="cancel"
+                class="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700">
+                Cancel
+            </button>
+            <button
+                type="submit"
+                wire:loading.attr="disabled"
+                wire:target="submit"
+                class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700">
+                <span wire:loading.remove wire:target="submit">Submit {{ count($activities) > 1 ? count($activities) . ' Activities' : 'Activity' }}</span>
+                <span wire:loading wire:target="submit">Submitting...</span>
+            </button>
+        </div>
+    </form>
 </div>

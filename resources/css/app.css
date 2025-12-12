@@ -2,6 +2,7 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import '../../vendor/power-components/livewire-powergrid/resources/css/tailwind4.css';
 @import "flatpickr/dist/flatpickr.min.css";
+@import "tom-select/dist/css/tom-select.css";
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -124,6 +125,47 @@ select:focus[data-flux-control] {
 
 #pendingTable input[type="checkbox"] {
     @apply border-neutral-300 dark:border-neutral-600;
+}
+
+/* Tom Select custom styling */
+.ts-wrapper .ts-control {
+    @apply rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500;
+}
+
+.dark .ts-wrapper .ts-control {
+    @apply border-neutral-600 bg-neutral-800 text-white;
+}
+
+.ts-wrapper .ts-dropdown {
+    @apply rounded-lg border border-gray-300 bg-white shadow-lg;
+}
+
+.dark .ts-wrapper .ts-dropdown {
+    @apply border-neutral-600 bg-neutral-800;
+}
+
+.ts-wrapper .ts-dropdown .option {
+    @apply text-gray-900 hover:bg-blue-50;
+}
+
+.dark .ts-wrapper .ts-dropdown .option {
+    @apply text-white hover:bg-neutral-700;
+}
+
+.ts-wrapper .ts-dropdown .create {
+    @apply text-blue-600;
+}
+
+.dark .ts-wrapper .ts-dropdown .create {
+    @apply text-blue-400;
+}
+
+.ts-wrapper .ts-dropdown .active {
+    @apply bg-blue-100;
+}
+
+.dark .ts-wrapper .ts-dropdown .active {
+    @apply bg-neutral-700;
 }
 
 /* \[:where(&)\]:size-4 {

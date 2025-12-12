@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('back_to_office_reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('travel_order_id');
             $table->string('report_num', 50);
             $table->date('start_date');
             $table->date('end_date')->nullable();
