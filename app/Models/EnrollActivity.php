@@ -9,6 +9,7 @@ class EnrollActivity extends Model
     protected $table = 'enrolled_activities';
     
     protected $fillable = [
+        'to_num',
         'activity_name',
         'unit_component',
         'purpose',

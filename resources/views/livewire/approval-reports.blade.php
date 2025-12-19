@@ -27,6 +27,40 @@
                         </div>
 
                         <div class="p-6 space-y-4">
+                            {{-- Travel Order Information --}}
+                            @if ($report->enrollActivity)
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4">
+                                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                                    Travel Order #{{ $report->travel_order_id }}
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                                            Activity Name
+                                        </label>
+                                        <p class="text-sm text-blue-900 dark:text-blue-100">
+                                            {{ $report->enrollActivity->activity_name ?? 'N/A' }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                                            Purpose Type
+                                        </label>
+                                        <p class="text-sm text-blue-900 dark:text-blue-100">
+                                            {{ $report->enrollActivity->purpose_type ?? 'N/A' }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                                            Subproject Name
+                                        </label>
+                                        <p class="text-sm text-blue-900 dark:text-blue-100">
+                                            {{ $report->enrollActivity->subproject_name ?? 'N/A' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                             {{-- Date Range --}}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>

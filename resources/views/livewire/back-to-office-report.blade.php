@@ -19,6 +19,56 @@
     @endif
 
     <form wire:submit="submit" class="space-y-6">
+        <!-- Travel Order ID -->
+        <div class="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
+            <label for="tracking_code" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Travel Order ID <span class="text-red-500">*</span>
+            </label>
+            <div class="flex gap-2" x-data="{
+                async viewPdf(trackingCode) {
+                    if (!trackingCode) return;
+                    
+                    try {
+                        const pdfUrl = 'https://172.16.3.7/api/proxy/tracking/pdf/' + trackingCode;
+                        const response = await fetch(pdfUrl);
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                    } catch (err) {
+                        console.error('Error loading PDF:', err);
+                        alert('Failed to load PDF');
+                    }
+                }
+            }">
+                <input
+                    type="text"
+                    id="tracking_code"
+                    wire:model="tracking_code"
+                    placeholder="Enter Travel Order ID"
+                    class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                <button
+                    type="button"
+                    wire:click="loadActivities"
+                    :disabled="!$wire.tracking_code"
+                    class="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-600 dark:hover:bg-green-700"
+                    x-data
+                    :disabled="!$wire.tracking_code">
+                    Load Activities
+                </button>
+                <button
+                    type="button"
+                    @click="viewPdf($wire.tracking_code)"
+                    :disabled="!$wire.tracking_code"
+                    class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700"
+                    x-data
+                    :disabled="!$wire.tracking_code">
+                    View PDF
+                </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter the Travel Order ID used when enrolling activities</p>
+        </div>
+
+        @if(!empty($tracking_code) && count($reports) > 0)
         @foreach ($reports as $index => $report)
         <div class="relative overflow-hidden rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
             <div class="mb-4 flex items-center justify-between">
@@ -36,29 +86,34 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Activity Name -->
+                <div>
+                    <label for="activity_name_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Activity Name <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="activity_name_{{ $index }}"
+                        wire:model="reports.{{ $index }}.activity_name"
+                        placeholder="Enter activity name"
+                        readonly
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                    @error('reports.'.$index.'.activity_name')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Date of Travel -->
                 <div>
                     <label for="date_of_travel_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Date of Travel <span class="text-red-500">*</span>
                     </label>
-                    <div wire:ignore>
-                        <input
-                            type="text"
-                            id="date_of_travel_{{ $index }}"
-                            wire:model="reports.{{ $index }}.date_of_travel"
-                            x-data
-                            x-init="flatpickr($el, {
-                                    mode: 'range',
-                                    dateFormat: 'Y-m-d',
-                                    enableTime: false,
-                                    altInput: true,
-                                    altFormat: 'F j, Y',
-                                    onChange: function(selectedDates, dateStr) {
-                                        $wire.set('reports.{{ $index }}.date_of_travel', dateStr);
-                                    }
-                                })"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
-                    </div>
+                    <input
+                        type="text"
+                        id="date_of_travel_{{ $index }}"
+                        wire:model="reports.{{ $index }}.date_of_travel"
+                        readonly
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
                     @error('reports.'.$index.'.date_of_travel')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
@@ -69,22 +124,53 @@
                     <label for="purpose_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Purpose <span class="text-red-500">*</span>
                     </label>
-                    <select
+                    <input
+                        type="text"
                         id="purpose_{{ $index }}"
                         wire:model="reports.{{ $index }}.purpose"
-                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
-                        <option value="">Select Purpose</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Field Visit">Field Visit</option>
-                        <option value="Training">Training</option>
-                        <option value="Inspection">Inspection</option>
-                        <option value="Conference">Conference</option>
-                        <option value="Other">Other</option>
-                    </select>
+                        placeholder="Purpose"
+                        readonly
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
                     @error('reports.'.$index.'.purpose')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <!-- Purpose Type -->
+                <div>
+                    <label for="purpose_type_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Purpose Type <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="purpose_type_{{ $index }}"
+                        wire:model="reports.{{ $index }}.purpose_type"
+                        placeholder="Purpose Type"
+                        readonly
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                    @error('reports.'.$index.'.purpose_type')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Subproject Name (conditionally shown for Site Specific) -->
+                @if(!empty($report['purpose']) && $report['purpose'] === 'Site Specific')
+                <div>
+                    <label for="subproject_name_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Subproject Name <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="subproject_name_{{ $index }}"
+                        wire:model="reports.{{ $index }}.subproject_name"
+                        placeholder="Subproject Name"
+                        readonly
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                    @error('reports.'.$index.'.subproject_name')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @endif
 
                 <!-- Place -->
                 <div>
@@ -157,21 +243,37 @@
             </div>
         </div>
         @endforeach
-
-        <!-- Add More Report Button -->
-        <div class="flex justify-center">
-            <button
-                type="button"
-                wire:click="addReport"
-                class="rounded-lg border-2 border-dashed border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:bg-neutral-700 dark:hover:text-blue-400">
-                <svg class="inline-block h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Add Another Report
-            </button>
+        @elseif($loadAttempted && count($reports) === 0)
+        <div class="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Travel Order ID "{{ $tracking_code }}" has no enrolled activities</h3>
+                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">Please make sure you have enrolled activities with this Travel Order ID first before creating a Back to Office Report.</p>
+                </div>
+            </div>
         </div>
+        @elseif(!$loadAttempted)
+        <div class="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-blue-800 dark:text-blue-200">Please enter your Travel Order ID and click "Load Activities" to begin.</p>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <!-- Submit Button -->
+        @if(!empty($tracking_code) && count($reports) > 0)
         <div class="flex justify-end gap-3 pt-4">
             <button
                 type="button"
@@ -188,5 +290,6 @@
                 <span wire:loading wire:target="submit">Submitting...</span>
             </button>
         </div>
+        @endif
     </form>
 </div>

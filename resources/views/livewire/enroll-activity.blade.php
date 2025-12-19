@@ -36,6 +36,108 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Travel Order Tracking Code -->
+                <div>
+                    <label for="to_num_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Travel Order Tracking Code <span class="text-red-500">*</span>
+                    </label>
+                    <div x-data="{
+                        trackingCodes: [],
+                        loading: true,
+                        error: null,
+                        searchQuery: '',
+                        showDropdown: false,
+                        init() {
+                            this.searchQuery = $wire.get('activities.{{ $index }}.to_num') || '';
+                            this.fetchTrackingCodes();
+                        },
+                        get filteredCodes() {
+                            if (!this.searchQuery) return this.trackingCodes;
+                            return this.trackingCodes.filter(record => 
+                                record.TrackingCode.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                record.Destination.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                record.EmpName.toLowerCase().includes(this.searchQuery.toLowerCase())
+                            );
+                        },
+                        async fetchTrackingCodes() {
+                            try {
+                                this.loading = true;
+                                const response = await fetch('https://172.16.3.7/api/proxy/tracking/all');
+                                const data = await response.json();
+                                this.trackingCodes = Array.isArray(data) ? data : [data];
+                                this.loading = false;
+                            } catch (err) {
+                                this.error = 'Failed to load tracking codes';
+                                this.loading = false;
+                                console.error('Error fetching tracking codes:', err);
+                            }
+                        },
+                        selectCode(code) {
+                            this.searchQuery = code;
+                            this.showDropdown = false;
+                            $wire.set('activities.{{ $index }}.to_num', code);
+                        },
+                        async viewPdf(trackingCode) {
+                            if (!trackingCode) return;
+                            
+                            try {
+                                const pdfUrl = 'https://172.16.3.7/api/proxy/tracking/pdf/' + trackingCode;
+                                const response = await fetch(pdfUrl);
+                                const blob = await response.blob();
+                                const url = URL.createObjectURL(blob);
+                                window.open(url, '_blank');
+                            } catch (err) {
+                                console.error('Error loading PDF:', err);
+                                alert('Failed to load PDF');
+                            }
+                        }
+                    }" 
+                    @click.away="showDropdown = false"
+                    class="relative">
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <input
+                                    type="text"
+                                    id="to_num_{{ $index }}"
+                                    x-model="searchQuery"
+                                    @focus="showDropdown = true"
+                                    @input="showDropdown = true; $wire.set('activities.{{ $index }}.to_num', $event.target.value)"
+                                    :disabled="loading"
+                                    placeholder="Search tracking code, destination, or employee name..."
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                                
+                                <!-- Dropdown -->
+                                <div x-show="showDropdown && !loading && !error" 
+                                     x-transition
+                                     class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-neutral-600 dark:bg-neutral-800">
+                                    <template x-if="filteredCodes.length === 0">
+                                        <div class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No matching tracking codes found</div>
+                                    </template>
+                                    <template x-for="record in filteredCodes" :key="record.TrackingCode">
+                                        <div @click="selectCode(record.TrackingCode)"
+                                             class="cursor-pointer px-4 py-2 hover:bg-blue-50 dark:hover:bg-neutral-700">
+                                            <div class="font-medium text-gray-900 dark:text-white" x-text="record.TrackingCode"></div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                <span x-text="record.Destination"></span> • <span x-text="record.EmpName"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                @click="viewPdf(searchQuery)"
+                                :disabled="!searchQuery"
+                                class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700">
+                                View PDF
+                            </button>
+                        </div>
+                    </div>
+                    @error('activities.'.$index.'.to_num')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Name of Activity -->
                 <div>
                     <label for="activity_name_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -102,11 +204,12 @@
                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
                         <option value="">Select Purpose Type</option>
                         @if($activity['purpose'] == 'Site Specific')
-                            <option value="JIT">JIT</option>
-                            <option value="Validation">Validation</option>
+                        <option value="JIT">JIT</option>
+                        <option value="Validation">Validation</option>
                         @elseif($activity['purpose'] == 'Non Site Specific')
-                            <option value="Meeting">Meeting</option>
-                            <option value="Training">Training</option>
+                        <option value="Assessment">Assessment</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Training">Training</option>
                         @endif
                     </select>
                     @error('activities.'.$index.'.purpose_type')
@@ -116,7 +219,7 @@
                 @endif
 
                 <!-- Subproject List (conditionally shown for Site Specific) -->
-                @if(!empty($activity['purpose_type']) && $activity['purpose_type'] !== 'Validation')
+                @if(!empty($activity['purpose_type']) && $activity['purpose_type'] !== 'Validation' && $activity['purpose'] === 'Site Specific')
                 <div>
                     <label for="subproject_id_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Subproject <span class="text-red-500">*</span>
@@ -127,7 +230,7 @@
                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
                         <option value="">Select Subproject</option>
                         @foreach($subprojects as $subproject)
-                            <option value="{{ $subproject->id }}">{{ $subproject->subproject_name }}</option>
+                        <option value="{{ $subproject->id }}">{{ $subproject->subproject_name }}</option>
                         @endforeach
                     </select>
                     @error('activities.'.$index.'.subproject_id')

@@ -24,7 +24,7 @@ class ApprovalReports extends Component
             ->whereHas('user', function ($query) {
                 $query->where('unit_component', Auth::user()->superior_role);
             })
-            ->with('user')
+            ->with(['user', 'enrollActivity'])
             ->get();
         
         $this->showViewModal = true;

@@ -13,6 +13,8 @@ class BackToOfficeReport extends Model
     protected $fillable = [
         'user_id',
         'report_num',
+        'travel_order_id',
+        'enrolled_activity_id',
         'start_date',
         'end_date',
         'purpose',
@@ -34,5 +36,13 @@ class BackToOfficeReport extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the enrolled activity associated with this report.
+     */
+    public function enrollActivity(): BelongsTo
+    {
+        return $this->belongsTo(EnrollActivity::class, 'enrolled_activity_id');
     }
 }

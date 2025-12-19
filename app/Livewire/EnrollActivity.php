@@ -22,7 +22,15 @@ class EnrollActivity extends Component
     
     public function addActivity()
     {
+        // Get the to_num from the last activity if exists
+        $lastToNum = '';
+        if (count($this->activities) > 0) {
+            $lastActivity = end($this->activities);
+            $lastToNum = $lastActivity['to_num'] ?? '';
+        }
+        
         $this->activities[] = [
+            'to_num' => $lastToNum,
             'activity_name' => '',
             'unit_component' => '',
             'purpose' => '',
@@ -43,13 +51,14 @@ class EnrollActivity extends Component
     {
         $rules = [];
         foreach ($this->activities as $index => $activity) {
+            $rules["activities.{$index}.to_num"] = 'required|string|max:255';
             $rules["activities.{$index}.activity_name"] = 'required|string|max:255';
             $rules["activities.{$index}.unit_component"] = 'required|in:IBUILD,IREAP,IPLAN,ISUPPORT';
             $rules["activities.{$index}.purpose"] = 'required|in:Site Specific,Non Site Specific';
             $rules["activities.{$index}.purpose_type"] = 'required|string|max:255';
             
-            // Subproject ID is required when purpose_type is not Validation
-            if (isset($activity['purpose_type']) && $activity['purpose_type'] !== 'Validation') {
+            // Subproject ID is required when purpose is Site Specific and purpose_type is not Validation
+            if (isset($activity['purpose']) && $activity['purpose'] === 'Site Specific' && isset($activity['purpose_type']) && $activity['purpose_type'] !== 'Validation') {
                 $rules["activities.{$index}.subproject_id"] = 'required|exists:subproject_lists,id';
             }
             
@@ -67,6 +76,7 @@ class EnrollActivity extends Component
     {
         $messages = [];
         foreach ($this->activities as $index => $activity) {
+            $messages["activities.{$index}.to_num.required"] = "Please enter the Travel Order ID";
             $messages["activities.{$index}.activity_name.required"] = "Please enter the activity name";
             $messages["activities.{$index}.unit_component.required"] = "Please select a component";
             $messages["activities.{$index}.purpose.required"] = "Please select a purpose";
@@ -95,6 +105,7 @@ class EnrollActivity extends Component
             }
 
             $data = [
+                'to_num' => $activity['to_num'],
                 'activity_name' => $activity['activity_name'],
                 'unit_component' => $activity['unit_component'],
                 'purpose' => $activity['purpose'],
@@ -103,8 +114,8 @@ class EnrollActivity extends Component
                 'end_date' => $endDate,
             ];
             
-            // Add subproject_id when purpose_type is not Validation
-            if ($activity['purpose_type'] !== 'Validation' && !empty($activity['subproject_id'])) {
+            // Add subproject_id when purpose is Site Specific and purpose_type is not Validation
+            if ($activity['purpose'] === 'Site Specific' && $activity['purpose_type'] !== 'Validation' && !empty($activity['subproject_id'])) {
                 $data['subproject_id'] = $activity['subproject_id'];
             }
             
