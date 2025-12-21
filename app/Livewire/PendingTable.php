@@ -31,7 +31,8 @@ final class PendingTable extends PowerGridComponent
     public function datasource(): Builder
     {
         return BackToOfficeReport::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', Auth::id())
+            ->where('status', 'Pending');
     }
 
     public function relationSearch(): array

@@ -22,6 +22,7 @@ class BackToOfficeReport extends Model
         'accomplishment',
         'photos',
         'status',
+        'approval_id',
     ];
 
     protected $casts = [

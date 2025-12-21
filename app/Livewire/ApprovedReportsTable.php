@@ -13,9 +13,9 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 
-final class ForApprovalTable extends PowerGridComponent
+final class ApprovedReportsTable extends PowerGridComponent
 {
-    public string $tableName = 'forApprovalTable';
+    public string $tableName = 'approvedReportsTable';
 
     public function setUp(): array
     {
@@ -32,10 +32,8 @@ final class ForApprovalTable extends PowerGridComponent
     public function datasource(): Builder
     {
         return BackToOfficeReport::query()
-            ->where('status', 'Pending')
-            ->whereHas('user', function ($query) {
-                $query->where('unit_component', Auth::user()->superior_role);
-            })
+            ->where('status', 'Approved')
+            ->where('user_id', Auth::id())
             ->with('user')
             ->select('report_num', 'status', 'user_id')
             ->selectRaw('MIN(id) as id')
@@ -92,12 +90,6 @@ final class ForApprovalTable extends PowerGridComponent
         if ($report) {
             $this->dispatch('viewReports', reportNum: $report->report_num);
         }
-    }
-
-    #[\Livewire\Attributes\On('reportApproved')]
-    public function refreshTable(): void
-    {
-        // This will refresh the PowerGrid table
     }
 
     public function actions(BackToOfficeReport $row): array

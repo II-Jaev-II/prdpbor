@@ -4,6 +4,7 @@ use App\Livewire\ApprovalReports;
 use App\Livewire\ApprovedReports;
 use App\Livewire\BackToOfficeReport;
 use App\Livewire\EnrollActivity;
+use App\Livewire\GeotagPhotos;
 use App\Livewire\PendingReports;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
@@ -18,8 +19,8 @@ Route::get('/', function () {
 
 Route::get('dashboard', function (Request $request) {
     $user = $request->user();
-    
-    return match($user->role) {
+
+    return match ($user->role) {
         \App\Enum\UserRole::Admin => redirect()->route('admin.dashboard'),
         \App\Enum\UserRole::Superior => redirect()->route('superior.dashboard'),
         \App\Enum\UserRole::User => redirect()->route('user.dashboard'),
@@ -46,6 +47,7 @@ Route::middleware(['auth', 'role:user,superior'])->group(function () {
     Route::get('/back-to-office-report', BackToOfficeReport::class)->name('back-to-office-report');
     Route::get('/pending-reports', PendingReports::class)->name('pending-reports');
     Route::get('/approved-reports', ApprovedReports::class)->name('approved-reports');
+    Route::get('/geotag-photos', GeotagPhotos::class)->name('geotag-photos');
 });
 
 Route::middleware(['auth'])->group(function () {
