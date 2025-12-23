@@ -21,6 +21,7 @@ class BackToOfficeReport extends Model
         'place',
         'accomplishment',
         'photos',
+        'monitoring_report',
         'status',
         'approval_id',
     ];

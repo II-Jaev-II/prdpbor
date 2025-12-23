@@ -42,44 +42,28 @@
                             </div>
 
                             <div class="p-6 space-y-4">
-                                {{-- Travel Order Information --}}
+                                {{-- Travel Order ID --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                        Travel Order ID
+                                    </label>
+                                    <p class="text-base text-zinc-900 dark:text-white">
+                                        {{ $report->travel_order_id ?? 'N/A' }}
+                                    </p>
+                                </div>
+
+                                {{-- Activity Name --}}
                                 @if ($report->enrollActivity)
-                                    <div
-                                        class="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4">
-                                        <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-3">
-                                            Travel Order #{{ $report->travel_order_id }}
-                                        </h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div>
-                                                <label
-                                                    class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                                                    Activity Name
-                                                </label>
-                                                <p class="text-sm text-blue-900 dark:text-blue-100">
-                                                    {{ $report->enrollActivity->activity_name ?? 'N/A' }}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <label
-                                                    class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                                                    Purpose Type
-                                                </label>
-                                                <p class="text-sm text-blue-900 dark:text-blue-100">
-                                                    {{ $report->enrollActivity->purpose_type ?? 'N/A' }}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <label
-                                                    class="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                                                    Subproject Name
-                                                </label>
-                                                <p class="text-sm text-blue-900 dark:text-blue-100">
-                                                    {{ $report->enrollActivity->subproject_name ?? 'N/A' }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                        Activity Name
+                                    </label>
+                                    <p class="text-base text-zinc-900 dark:text-white">
+                                        {{ $report->enrollActivity->activity_name ?? 'N/A' }}
+                                    </p>
+                                </div>
                                 @endif
+
                                 {{-- Date Range --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -106,11 +90,36 @@
                                         Purpose
                                     </label>
                                     <p class="text-base text-zinc-900 dark:text-white">
-                                        {{ $report->purpose }}
+                                        {{ $report->purpose ?? 'N/A' }}
                                     </p>
                                 </div>
 
+                                {{-- Purpose Type --}}
+                                @if ($report->enrollActivity && $report->enrollActivity->purpose_type)
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                        Purpose Type
+                                    </label>
+                                    <p class="text-base text-zinc-900 dark:text-white">
+                                        {{ $report->enrollActivity->purpose_type }}
+                                    </p>
+                                </div>
+                                @endif
+
+                                {{-- Subproject Name (conditionally shown for Site Specific) --}}
+                                @if ($report->enrollActivity && $report->enrollActivity->subproject_name)
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                        Subproject Name
+                                    </label>
+                                    <p class="text-base text-zinc-900 dark:text-white">
+                                        {{ $report->enrollActivity->subproject_name }}
+                                    </p>
+                                </div>
+                                @endif
+
                                 {{-- Place --}}
+                                @if ($report->place)
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                         Place
@@ -119,8 +128,10 @@
                                         {{ $report->place }}
                                     </p>
                                 </div>
+                                @endif
 
                                 {{-- Accomplishment --}}
+                                @if ($report->accomplishment)
                                 <div>
                                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                         Accomplishment
@@ -129,6 +140,7 @@
                                         {{ $report->accomplishment }}
                                     </p>
                                 </div>
+                                @endif
 
                                 {{-- Status --}}
                                 <div>
@@ -156,11 +168,11 @@
                                     </div>
                                 @endif
 
-                                {{-- Photos --}}
+                                {{-- Geotagged Photos --}}
                                 @if (!empty($report->photos) && count($report->photos) > 0)
                                     <div>
                                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-                                            Photos
+                                            Geotagged Photos
                                         </label>
                                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                             @foreach ($report->photos as $photo)
@@ -173,6 +185,32 @@
                                             @endforeach
                                         </div>
                                     </div>
+                                @endif
+
+                                {{-- Monitoring Report (conditionally shown for Site Specific) --}}
+                                @if (!empty($report->monitoring_report))
+                                <div>
+                                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                        Monitoring Report (PDF)
+                                    </label>
+                                    <div class="flex items-center gap-3 p-4 rounded-lg border border-zinc-300 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700">
+                                        <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ basename($report->monitoring_report) }}</p>
+                                            <p class="text-xs text-zinc-500 dark:text-zinc-400">PDF Document</p>
+                                        </div>
+                                        <a href="{{ Storage::url($report->monitoring_report) }}" target="_blank" rel="noopener noreferrer"
+                                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
                                 @endif
                             </div>
                         </div>

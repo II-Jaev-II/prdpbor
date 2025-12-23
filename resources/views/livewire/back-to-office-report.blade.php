@@ -175,7 +175,7 @@
                 <!-- Place -->
                 <div>
                     <label for="place_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                        Place <span class="text-red-500">*</span>
+                        Place
                     </label>
                     <input
                         type="text"
@@ -191,7 +191,7 @@
                 <!-- Accomplishment -->
                 <div>
                     <label for="accomplishment_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                        Accomplishment <span class="text-red-500">*</span>
+                        Accomplishment
                     </label>
                     <textarea
                         id="accomplishment_{{ $index }}"
@@ -207,7 +207,7 @@
                 <!-- Geotagged Photo -->
                 <div>
                     <label for="geotagged_photos_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                        Geotagged Photo (at least 1) <span class="text-red-500">*</span>
+                        Geotagged Photo (at least 1)
                     </label>
                     <input
                         type="file"
@@ -240,6 +240,37 @@
                         Uploading photos...
                     </div>
                 </div>
+
+                <!-- Monitoring Report (conditionally shown for Site Specific) -->
+                @if(!empty($report['purpose']) && $report['purpose'] === 'Site Specific')
+                <div>
+                    <label for="monitoring_report_{{ $index }}" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Monitoring Report
+                    </label>
+                    <input
+                        type="file"
+                        id="monitoring_report_{{ $index }}"
+                        wire:model="reports.{{ $index }}.monitoring_report"
+                        accept="application/pdf"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:file:bg-blue-600 dark:hover:file:bg-blue-700 dark:focus:border-blue-500">
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload monitoring report in PDF format</p>
+
+                    @error('reports.'.$index.'.monitoring_report')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+
+                    <!-- File Name Preview -->
+                    @if (!empty($report['monitoring_report']))
+                    <div class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                        Selected file: {{ $report['monitoring_report']->getClientOriginalName() }}
+                    </div>
+                    @endif
+
+                    <div wire:loading wire:target="reports.{{ $index }}.monitoring_report" class="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                        Uploading PDF...
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
         @endforeach

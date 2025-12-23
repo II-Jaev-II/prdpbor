@@ -4,8 +4,12 @@ namespace App\Livewire;
 
 use App\Models\BackToOfficeReport as BackToOfficeReportModel;
 use App\Models\EnrollActivity;
+use App\Models\GeotagPhoto;
 use App\Models\SubprojectList;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -69,6 +73,7 @@ class BackToOfficeReport extends Component
                 'place' => '',
                 'accomplishment' => '',
                 'geotagged_photos' => [],
+                'monitoring_report' => null,
             ];
         }
     }
@@ -84,6 +89,7 @@ class BackToOfficeReport extends Component
             'place' => '',
             'accomplishment' => '',
             'geotagged_photos' => [],
+            'monitoring_report' => null,
         ];
     }
 
@@ -105,12 +111,14 @@ class BackToOfficeReport extends Component
             // Subproject name is required if purpose is Site Specific
             if (isset($report['purpose']) && $report['purpose'] === 'Site Specific') {
                 $rules["reports.{$index}.subproject_name"] = 'required|string|max:255';
+                // Monitoring report is optional for Site Specific
+                $rules["reports.{$index}.monitoring_report"] = 'nullable|file|mimes:pdf|max:20480';
             }
             
-            $rules["reports.{$index}.place"] = 'required|string|max:255';
-            $rules["reports.{$index}.accomplishment"] = 'required|string';
-            $rules["reports.{$index}.geotagged_photos"] = 'required|array|min:1';
-            $rules["reports.{$index}.geotagged_photos.*"] = 'required|image|max:10240';
+            $rules["reports.{$index}.place"] = 'nullable|string|max:255';
+            $rules["reports.{$index}.accomplishment"] = 'nullable|string';
+            $rules["reports.{$index}.geotagged_photos"] = 'nullable|array';
+            $rules["reports.{$index}.geotagged_photos.*"] = 'nullable|image|max:10240';
         }
         return $rules;
     }
@@ -125,10 +133,9 @@ class BackToOfficeReport extends Component
             $messages["reports.{$index}.purpose.required"] = "Please select a purpose of travel";
             $messages["reports.{$index}.purpose_type.required"] = "Please select a purpose type";
             $messages["reports.{$index}.subproject_name.required"] = "Please enter the subproject name";
-            $messages["reports.{$index}.place.required"] = "Please enter a place of travel";
-            $messages["reports.{$index}.accomplishment.required"] = "Please enter an accomplishment";
-            $messages["reports.{$index}.geotagged_photos.required"] = 'Please upload at least one geotagged photo';
-            $messages["reports.{$index}.geotagged_photos.min"] = 'Please upload at least one geotagged photo';
+            $messages["reports.{$index}.monitoring_report.file"] = "The monitoring report must be a file";
+            $messages["reports.{$index}.monitoring_report.mimes"] = "The monitoring report must be a PDF file";
+            $messages["reports.{$index}.monitoring_report.max"] = "The monitoring report must not exceed 20MB";
             $messages["reports.{$index}.geotagged_photos.*.required"] = 'Please upload a valid image file';
             $messages["reports.{$index}.geotagged_photos.*.image"] = 'The file must be an image';
             $messages["reports.{$index}.geotagged_photos.*.max"] = 'Each image must not exceed 10MB';
@@ -136,9 +143,42 @@ class BackToOfficeReport extends Component
         return $messages;
     }
 
+    /**
+     * Validate that all photos contain GPS metadata
+     */
+    protected function validateGpsMetadata()
+    {
+        foreach ($this->reports as $index => $report) {
+            if (!empty($report['geotagged_photos'])) {
+                foreach ($report['geotagged_photos'] as $photoIndex => $photo) {
+                    $path = $photo->getRealPath();
+                    
+                    // Read EXIF data
+                    $exif = @exif_read_data($path);
+                    
+                    // Check if GPS data exists
+                    if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
+                        $this->addError(
+                            "reports.{$index}.geotagged_photos.{$photoIndex}",
+                            "Photo '{$photo->getClientOriginalName()}' does not contain GPS coordinates. Please upload photos taken with location services enabled."
+                        );
+                    }
+                }
+            }
+        }
+        
+        // Return true if no GPS errors were added
+        return empty($this->getErrorBag()->get('reports.*.geotagged_photos.*'));
+    }
+
     public function submit()
     {
         $this->validate();
+
+        // Validate GPS metadata in photos
+        if (!$this->validateGpsMetadata()) {
+            return; // Stop submission if GPS validation fails
+        }
 
         // Generate a unique report number for this submission
         $reportNum = 'RPT-' . date('Ymd') . '-' . strtoupper(uniqid());
@@ -149,20 +189,38 @@ class BackToOfficeReport extends Component
             $photoPaths = [];
             if (!empty($report['geotagged_photos'])) {
                 foreach ($report['geotagged_photos'] as $photo) {
-                    $originalName = $photo->getClientOriginalName();
-                    $filename = pathinfo($originalName, PATHINFO_FILENAME);
+                    // Get original filename and extension
+                    $originalName = pathinfo($photo->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension = $photo->getClientOriginalExtension();
 
-                    // Check if file exists and add underscore with counter
-                    $counter = 1;
-                    $newFileName = $originalName;
-                    while (file_exists(storage_path('app/public/reports/photos/' . $newFileName))) {
-                        $newFileName = $filename . '_' . $counter . '.' . $extension;
-                        $counter++;
-                    }
-
-                    $photoPaths[] = $photo->storeAs('reports/photos', $newFileName, 'public');
+                    // Generate unique filename with original name
+                    $filename = $this->generateUniqueFilename($originalName, $extension, 'reports/photos');
+                    $path = 'reports/photos/' . $filename;
+                    
+                    // Compress and store the photo
+                    $compressedImage = $this->compressImage($photo);
+                    Storage::disk('public')->put($path, $compressedImage);
+                    
+                    $photoPaths[] = $path;
                 }
+            }
+
+            // Save monitoring report PDF if provided
+            $monitoringReportPath = null;
+            if (!empty($report['monitoring_report'])) {
+                $originalName = $report['monitoring_report']->getClientOriginalName();
+                $filename = pathinfo($originalName, PATHINFO_FILENAME);
+                $extension = $report['monitoring_report']->getClientOriginalExtension();
+
+                // Check if file exists and add underscore with counter
+                $counter = 1;
+                $newFileName = $originalName;
+                while (file_exists(storage_path('app/public/reports/monitoring/' . $newFileName))) {
+                    $newFileName = $filename . '_' . $counter . '.' . $extension;
+                    $counter++;
+                }
+
+                $monitoringReportPath = $report['monitoring_report']->storeAs('reports/monitoring', $newFileName, 'public');
             }
 
             // Parse date of travel
@@ -194,8 +252,18 @@ class BackToOfficeReport extends Component
                 'place' => $report['place'],
                 'accomplishment' => $report['accomplishment'],
                 'photos' => $photoPaths,
+                'monitoring_report' => $monitoringReportPath,
                 'status' => 'Pending',
             ]);
+
+            // Store photos in geotag_photos table
+            foreach ($photoPaths as $photoPath) {
+                GeotagPhoto::create([
+                    'user_id' => Auth::id(),
+                    'travel_order_id' => $this->tracking_code,
+                    'photo_path' => $photoPath,
+                ]);
+            }
         }
 
         $reportCount = count($this->reports);
@@ -214,6 +282,80 @@ class BackToOfficeReport extends Component
     {
         $this->reset();
         return redirect()->route('dashboard');
+    }
+
+    /**
+     * Generate a unique filename, adding _1, _2, etc. if duplicates exist
+     */
+    private function generateUniqueFilename($originalName, $extension, $directory)
+    {
+        $filename = $originalName . '.' . $extension;
+        $counter = 1;
+        
+        // Check if file exists and increment counter if needed
+        while (Storage::disk('public')->exists($directory . '/' . $filename)) {
+            $filename = $originalName . '_' . $counter . '.' . $extension;
+            $counter++;
+        }
+        
+        return $filename;
+    }
+
+    /**
+     * Compress image while preserving EXIF data
+     */
+    private function compressImage($photo)
+    {
+        $originalSize = $photo->getSize(); // Size in bytes
+        $targetSize = 600 * 1024; // 600 KB in bytes
+        
+        // If file is already small enough, return as-is
+        if ($originalSize <= $targetSize) {
+            return file_get_contents($photo->getRealPath());
+        }
+        
+        // Read and process image with Intervention Image
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($photo->getRealPath());
+        
+        $extension = strtolower($photo->getClientOriginalExtension());
+        
+        // Calculate compression ratio needed
+        $ratio = $targetSize / $originalSize;
+        
+        // Estimate quality needed (more aggressive for larger files)
+        if ($ratio > 0.7) {
+            $quality = 85; // Light compression needed
+        } elseif ($ratio > 0.5) {
+            $quality = 75; // Medium compression
+        } elseif ($ratio > 0.3) {
+            $quality = 65; // Heavy compression
+        } else {
+            $quality = 55; // Very heavy compression
+        }
+        
+        // For very large files (> 3x target), resize first
+        if ($originalSize > ($targetSize * 3)) {
+            $scaleFactor = sqrt($ratio); // Scale to roughly target size
+            $newWidth = (int)($image->width() * $scaleFactor);
+            $newHeight = (int)($image->height() * $scaleFactor);
+            $image->scale(width: $newWidth, height: $newHeight);
+        }
+        
+        // Compress with calculated quality
+        if (in_array($extension, ['jpg', 'jpeg'])) {
+            $compressed = $image->toJpeg(quality: $quality)->toString();
+        } else {
+            // Convert other formats to JPEG
+            $compressed = $image->toJpeg(quality: $quality)->toString();
+        }
+        
+        // If still too large, do one more pass with lower quality
+        if (strlen($compressed) > $targetSize) {
+            $compressed = $image->toJpeg(quality: 50)->toString();
+        }
+        
+        return $compressed;
     }
 
     public function render()

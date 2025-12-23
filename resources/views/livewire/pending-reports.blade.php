@@ -11,71 +11,126 @@
 
             <div class="flex-1 overflow-y-auto p-6">
                 <div class="max-w-4xl mx-auto space-y-6">
+                    {{-- Travel Order ID --}}
+                    <div>
+                        <label for="editForm.travel_order_id" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Travel Order ID <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.travel_order_id"
+                            wire:model="editForm.travel_order_id"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+
+                    {{-- Activity Name --}}
+                    <div>
+                        <label for="editForm.activity_name" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Activity Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.activity_name"
+                            wire:model="editForm.activity_name"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+
+                    {{-- Date of Travel --}}
                     <div>
                         <label for="editForm.date_of_travel"
                             class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                            Date of Travel
+                            Date of Travel <span class="text-red-500">*</span>
                         </label>
-                        <div wire:ignore x-data="{
-                            picker: null,
-                            dateValue: @entangle('editForm.date_of_travel').live,
-                            init() {
-                                this.$nextTick(() => {
-                                    this.picker = flatpickr(this.$refs.datePicker, {
-                                        mode: 'range',
-                                        dateFormat: 'Y-m-d',
-                                        enableTime: false,
-                                        altInput: true,
-                                        altFormat: 'F j, Y',
-                                        appendTo: this.$root,
-                                        static: false,
-                                        onChange: (selectedDates, dateStr) => {
-                                            this.dateValue = dateStr;
-                                        }
-                                    });
-                                });
-                            },
-                            destroy() {
-                                if (this.picker) {
-                                    this.picker.destroy();
-                                    this.picker = null;
-                                }
-                            }
-                        }" x-on:modal-close.window="destroy()" x-watch="dateValue"
-                            x-effect="if (picker && dateValue) { picker.setDate(dateValue.split(' to '), false); }">
-                            <input type="text" x-ref="datePicker" id="editForm.date_of_travel"
-                                wire:model="editForm.date_of_travel"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:focus:border-blue-500">
-                        </div>
-                        @error('editForm.date_of_travel')
+                        <input
+                            type="text"
+                            id="editForm.date_of_travel"
+                            wire:model="editForm.date_of_travel"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+
+                    {{-- Purpose --}}
+                    <div>
+                        <label for="editForm.purpose" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Purpose <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.purpose"
+                            wire:model="editForm.purpose"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+
+                    {{-- Purpose Type --}}
+                    @if(!empty($editForm['purpose_type']))
+                    <div>
+                        <label for="editForm.purpose_type" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Purpose Type <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.purpose_type"
+                            wire:model="editForm.purpose_type"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+                    @endif
+
+                    {{-- Subproject Name (conditionally shown for Site Specific) --}}
+                    @if(!empty($editForm['subproject_name']))
+                    <div>
+                        <label for="editForm.subproject_name" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Subproject Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.subproject_name"
+                            wire:model="editForm.subproject_name"
+                            readonly
+                            class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:focus:border-blue-500">
+                    </div>
+                    @endif
+
+                    {{-- Place --}}
+                    <div>
+                        <label for="editForm.place" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Place
+                        </label>
+                        <input
+                            type="text"
+                            id="editForm.place"
+                            wire:model="editForm.place"
+                            placeholder="Enter location/place"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                        @error('editForm.place')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- Purpose --}}
-                    <flux:select wire:model="editForm.purpose" label="Purpose">
-                        <option value="">Select Purpose</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Field Visit">Field Visit</option>
-                        <option value="Training">Training</option>
-                        <option value="Inspection">Inspection</option>
-                        <option value="Conference">Conference</option>
-                        <option value="Other">Other</option>
-                    </flux:select>
-
-                    {{-- Place --}}
-                    <flux:input wire:model="editForm.place" label="Place" type="text"
-                        placeholder="Enter location/place" />
-
                     {{-- Accomplishment --}}
-                    <flux:textarea wire:model="editForm.accomplishment" label="Accomplishment" rows="4"
-                        placeholder="Describe what was accomplished..." />
+                    <div>
+                        <label for="editForm.accomplishment" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Accomplishment
+                        </label>
+                        <textarea
+                            id="editForm.accomplishment"
+                            wire:model="editForm.accomplishment"
+                            rows="6"
+                            placeholder="Describe your accomplishments and activities during the travel"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500"></textarea>
+                        @error('editForm.accomplishment')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     {{-- Existing Photos --}}
                     @if (!empty($existingPhotos))
                         <div>
                             <label class="block text-sm font-medium text-gray-900 dark:text-white mb-3">
-                                Existing Photos
+                                Geotagged Photos
                             </label>
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 @foreach ($existingPhotos as $index => $photo)
@@ -103,10 +158,12 @@
                     {{-- Upload New Photos --}}
                     <div>
                         <label for="new_photos" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                            Add New Photos (Optional)
+                            Add New Geotagged Photos (Optional)
                         </label>
                         <input type="file" id="new_photos" wire:model="newPhotos" accept="image/*" multiple
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:file:bg-blue-600 dark:hover:file:bg-blue-700 dark:focus:border-blue-500">
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload one or more geotagged photos from your travel</p>
+
                         @error('newPhotos.*')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -132,6 +189,72 @@
                             Uploading photos...
                         </div>
                     </div>
+
+                    {{-- Existing Monitoring Report (conditionally shown for Site Specific) --}}
+                    @if(!empty($editForm['monitoring_report']))
+                    <div>
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Monitoring Report (PDF)
+                        </label>
+                        <div class="flex items-center gap-3 p-4 rounded-lg border border-gray-300 bg-gray-50 dark:border-neutral-600 dark:bg-neutral-700">
+                            <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ basename($editForm['monitoring_report']) }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">PDF Document</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="{{ Storage::url($editForm['monitoring_report']) }}" target="_blank" rel="noopener noreferrer"
+                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    View
+                                </a>
+                                <button type="button" wire:click="removeMonitoringReport"
+                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Upload New Monitoring Report (conditionally shown for Site Specific) --}}
+                    @if(!empty($editForm['purpose']) && $editForm['purpose'] === 'Site Specific' && empty($editForm['monitoring_report']))
+                    <div>
+                        <label for="new_monitoring_report" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Upload Monitoring Report (Optional)
+                        </label>
+                        <input
+                            type="file"
+                            id="new_monitoring_report"
+                            wire:model="newMonitoringReport"
+                            accept="application/pdf"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:file:bg-blue-600 dark:hover:file:bg-blue-700 dark:focus:border-blue-500">
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload monitoring report in PDF format</p>
+
+                        @error('newMonitoringReport')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+
+                        {{-- File Name Preview --}}
+                        @if (!empty($newMonitoringReport))
+                        <div class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                            Selected file: {{ $newMonitoringReport->getClientOriginalName() }}
+                        </div>
+                        @endif
+
+                        <div wire:loading wire:target="newMonitoringReport" class="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                            Uploading PDF...
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -141,7 +264,7 @@
                 </flux:button>
 
                 <flux:button variant="primary" type="submit" wire:loading.attr="disabled"
-                    wire:target="updateReport, newPhotos">
+                    wire:target="updateReport, newPhotos, newMonitoringReport">
                     <span wire:loading.remove wire:target="updateReport">Update Report</span>
                     <span wire:loading wire:target="updateReport">Updating...</span>
                 </flux:button>

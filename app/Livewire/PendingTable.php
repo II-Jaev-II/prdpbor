@@ -105,7 +105,13 @@ final class PendingTable extends PowerGridComponent
                 ->slot('Edit')
                 ->id()
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('editReport', ['rowId' => $row->id])
+                ->dispatch('editReport', ['rowId' => $row->id]),
+
+            Button::add('delete')
+                ->slot('Delete')
+                ->id()
+                ->class('pg-btn-white dark:ring-red-600 dark:border-red-600 dark:hover:bg-red-700 dark:ring-offset-red-800 dark:text-red-300 dark:bg-red-700 text-red-600 border-red-600 hover:bg-red-50')
+                ->dispatch('deleteReport', ['rowId' => $row->id])
         ];
     }
 }
