@@ -24,6 +24,7 @@ class BackToOfficeReport extends Model
         'monitoring_report',
         'status',
         'approval_id',
+        'approved_by',
     ];
 
     protected $casts = [
@@ -46,5 +47,13 @@ class BackToOfficeReport extends Model
     public function enrollActivity(): BelongsTo
     {
         return $this->belongsTo(EnrollActivity::class, 'enrolled_activity_id');
+    }
+
+    /**
+     * Get the user who approved this report.
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

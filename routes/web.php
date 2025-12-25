@@ -7,6 +7,7 @@ use App\Livewire\EnrollActivity;
 use App\Livewire\GeotagPhotos;
 use App\Livewire\PendingReports;
 use App\Livewire\Settings\Appearance;
+use App\Livewire\Settings\ESignature;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
     Route::get('/approval-reports', ApprovalReports::class)->name('approval-reports');
+    Route::get('/settings/e-signature', ESignature::class)->name('e-signature.edit');
 });
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {

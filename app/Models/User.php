@@ -27,6 +27,7 @@ class User extends Authenticatable
         'role',
         'superior_role',
         'unit_component',
+        'e_signature',
         'password',
     ];
 
@@ -64,7 +65,7 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 

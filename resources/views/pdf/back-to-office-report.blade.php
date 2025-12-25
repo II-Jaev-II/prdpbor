@@ -14,6 +14,7 @@
             font-size: 11px;
             line-height: 1.4;
             color: #000;
+            position: relative;
         }
 
         .document-header {
@@ -22,6 +23,11 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #000;
             padding-bottom: 15px;
+            position: relative;
+        }
+
+        .header-wrapper {
+            position: relative;
         }
 
         .logo-section {
@@ -52,7 +58,7 @@
 
         .header-info p {
             margin: 2px 0;
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .header-main {
@@ -102,10 +108,13 @@
         .date-column {
             width: 20%;
             text-align: center;
+            vertical-align: middle;
         }
 
         .place-column {
             width: 25%;
+            text-align: center;
+            vertical-align: middle;
         }
 
         .accomplishment-column {
@@ -124,11 +133,7 @@
         }
 
         .photos-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
             margin: 20px 0;
-            page-break-inside: avoid;
         }
 
         .photo-item {
@@ -136,12 +141,16 @@
             overflow: hidden;
             page-break-inside: avoid;
             position: relative;
+            margin-bottom: 15px;
+            max-width: 100%;
         }
 
         .photo-item img {
             width: 100%;
             height: auto;
+            max-height: 350px;
             display: block;
+            object-fit: contain;
         }
 
         .photo-qr {
@@ -188,18 +197,6 @@
             font-size: 10px;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 30px;
-            left: 50px;
-            right: 50px;
-            text-align: center;
-            font-size: 9px;
-            color: #666;
-            border-top: 1px solid #ccc;
-            padding-top: 8px;
-        }
-
         .page-number:after {
             content: counter(page);
         }
@@ -209,16 +206,64 @@
             border-top: 2px solid #000;
             page-break-after: always;
         }
+
+        .qr-code-container {
+            position: absolute;
+            top: -70px;
+            right: 0;
+            width: 80px;
+            padding: 5px;
+            background: white;
+            text-align: center;
+        }
+
+        .qr-code-container img {
+            width: 100%;
+            height: auto;
+        }
+
+        .qr-code-container p {
+            font-size: 7px;
+            margin: 3px 0 0 0;
+            word-wrap: break-word;
+        }
+
+        .logo-container {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            width: 140px;
+            padding: 5px;
+            background: white;
+            text-align: center;
+        }
+
+        .logo-container img {
+            width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 
 <body>
+    <div class="header-wrapper">
+        <div class="logo-container">
+            <img src="{{ public_path('prdp-logo.png') }}" alt="PRDP Logo">
+        </div>
+
+        @if ($approvalId && $qrCode)
+            <div class="qr-code-container">
+                <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code">
+            </div>
+        @endif
+    </div>
+
     <div class="document-header">
         <div class="header-info">
-            <p style="font-size: 10px;">Republic of the Philippines</p>
+            <p style="font-size: 12px;">Republic of the Philippines</p>
             <p class="header-main">DEPARTMENT OF AGRICULTURE RFO 1</p>
             <p class="header-main">Regional Project Coordination Office 1</p>
-            <p style="font-size: 10px;">San Fernando City, La Union</p>
+            <p style="font-size: 12px;">San Fernando City, La Union</p>
         </div>
     </div>
 
@@ -249,18 +294,6 @@
                     </td>
                     <td class="place-column">
                         <strong>{{ $report->place }}</strong>
-                        @if ($report->enrollActivity)
-                            <div class="travel-order-info">
-                                <p style="margin: 5px 0 2px 0;"><strong>Travel Order
-                                        #{{ $report->travel_order_id }}</strong></p>
-                                <p style="margin: 2px 0;">Activity:
-                                    {{ $report->enrollActivity->activity_name ?? 'N/A' }}</p>
-                                <p style="margin: 2px 0;">Purpose: {{ $report->enrollActivity->purpose_type ?? 'N/A' }}
-                                </p>
-                                <p style="margin: 2px 0;">Subproject:
-                                    {{ $report->enrollActivity->subproject_name ?? 'N/A' }}</p>
-                            </div>
-                        @endif
                     </td>
                     <td class="accomplishment-column">
                         <div class="accomplishment-text">
@@ -287,12 +320,6 @@
             @foreach ($allPhotos as $photo)
                 <div class="photo-item">
                     <img src="{{ public_path('storage/' . $photo) }}" alt="Report photo">
-                    @if ($approvalId && $qrCode)
-                        <div class="photo-qr">
-                            <img src="data:image/png;base64,{{ $qrCode }}" alt="QR"
-                                style="width: 100%; height: 100%;">
-                        </div>
-                    @endif
                 </div>
             @endforeach
         </div>
@@ -307,29 +334,14 @@
             </div>
             <div class="signature-cell">
                 <p class="signature-label">Noted by:</p>
-                <p class="signature-name">DEO G. RIVERA</p>
+                @if ($reports->first()->approver && $reports->first()->approver->e_signature)
+                    <img src="{{ public_path('storage/' . $reports->first()->approver->e_signature) }}" alt="Signature"
+                        style="max-width: 200px; height: auto; margin: 0 auto 5px; display: block;">
+                @endif
+                <p class="signature-name">{{ strtoupper($reports->first()->approver->name ?? 'DEO G. RIVERA') }}</p>
                 <p class="signature-title">I-SUPPORT COMPONENT HEAD</p>
             </div>
         </div>
-    </div>
-
-    @if ($approvalId)
-        <div
-            style="margin-top: 30px; padding: 15px; border: 1px solid #ccc; text-align: center; page-break-inside: avoid;">
-            <p style="font-size: 10px; margin: 0 0 10px 0;"><strong>Approval Verification</strong></p>
-            <div style="margin: 10px auto;">
-                <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code"
-                    style="width: 100px; height: 100px;">
-            </div>
-            <p style="font-size: 10px; margin: 5px 0;">Approval ID: <strong
-                    style="font-family: 'Courier New', monospace;">{{ $approvalId }}</strong></p>
-            <p style="font-size: 9px; color: #666; margin: 5px 0;">Scan this QR code to verify the approval ID</p>
-        </div>
-    @endif
-
-    <div class="footer">
-        <p>This is an official document generated from the Back to Office Reporting System</p>
-        <p>Page <span class="page-number"></span></p>
     </div>
 </body>
 

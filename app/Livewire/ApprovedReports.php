@@ -28,7 +28,7 @@ class ApprovedReports extends Component
             ->where('report_num', $reportNum)
             ->where('user_id', Auth::id())
             ->where('status', 'Approved')
-            ->with(['user', 'enrollActivity'])
+            ->with(['user', 'enrollActivity', 'approver'])
             ->get();
 
         $this->showViewModal = true;
@@ -41,7 +41,7 @@ class ApprovedReports extends Component
             ->where('report_num', $this->currentReportNum)
             ->where('user_id', Auth::id())
             ->where('status', 'Approved')
-            ->with(['user', 'enrollActivity'])
+            ->with(['user', 'enrollActivity', 'approver'])
             ->get();
 
         if ($reports->isEmpty()) {

@@ -73,6 +73,7 @@ class ApprovalReports extends Component
             $report->update([
                 'status' => 'Approved',
                 'approval_id' => strtoupper($this->approvalId),
+                'approved_by' => Auth::id(),
             ]);
         }
 
