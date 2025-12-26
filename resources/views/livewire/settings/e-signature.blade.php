@@ -106,18 +106,5 @@
                 </div>
             </form>
         </div>
-
-        <!-- Information Section -->
-        <div class="my-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <flux:heading size="sm" class="mb-2 text-blue-900 dark:text-blue-100">
-                {{ __('Tips for a good signature image:') }}
-            </flux:heading>
-            <ul class="list-disc list-inside text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                <li>{{ __('Use a clear image with a transparent or white background') }}</li>
-                <li>{{ __('Ensure your signature is clearly visible and legible') }}</li>
-                <li>{{ __('Recommended dimensions: 400x150 pixels or similar aspect ratio') }}</li>
-                <li>{{ __('The signature will be used in generated reports') }}</li>
-            </ul>
-        </div>
     </x-settings.layout>
 </section>

@@ -180,6 +180,7 @@
             width: 50%;
             text-align: center;
             vertical-align: top;
+            position: relative;
         }
 
         .signature-label {
@@ -191,10 +192,21 @@
             font-weight: bold;
             font-size: 11px;
             text-decoration: underline;
+            position: relative;
         }
 
         .signature-title {
             font-size: 10px;
+        }
+
+        .e-signature-image {
+            position: absolute;
+            left: 50%;
+            top: -20px;
+            transform: translateX(-50%);
+            max-width: 150px;
+            height: auto;
+            z-index: 10;
         }
 
         .page-number:after {
@@ -334,11 +346,13 @@
             </div>
             <div class="signature-cell">
                 <p class="signature-label">Noted by:</p>
-                @if ($reports->first()->approver && $reports->first()->approver->e_signature)
-                    <img src="{{ public_path('storage/' . $reports->first()->approver->e_signature) }}" alt="Signature"
-                        style="max-width: 200px; height: auto; margin: 0 auto 5px; display: block;">
-                @endif
-                <p class="signature-name">{{ strtoupper($reports->first()->approver->name ?? 'DEO G. RIVERA') }}</p>
+                <p class="signature-name">
+                    @if ($reports->first()->approver && $reports->first()->approver->e_signature)
+                        <img src="{{ public_path('storage/' . $reports->first()->approver->e_signature) }}" alt="Signature"
+                            class="e-signature-image">
+                    @endif
+                    {{ strtoupper($reports->first()->approver->name ?? 'DEO G. RIVERA') }}
+                </p>
                 <p class="signature-title">I-SUPPORT COMPONENT HEAD</p>
             </div>
         </div>
