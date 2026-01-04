@@ -20,17 +20,24 @@ class BackToOfficeReport extends Component
     public $reports = [];
     public $tracking_code = '';
     public $loadAttempted = false;
+    public $existingPhotos;
+    public $photoSelectionMode = []; // 'upload' or 'select' per report index
+    public $photoSearchTerm = [];
+    public $photoFilterUser = [];
+    public $photosPerPage = 12;
+    public $currentPhotoPage = [];
 
     public function mount()
     {
         // Initialize with one report form
+        $this->existingPhotos = collect([]);
         $this->addReport();
     }
 
     public function loadActivities()
     {
         $this->loadAttempted = true;
-        
+
         if (empty($this->tracking_code)) {
             $this->reports = [];
             $this->addReport();
@@ -44,6 +51,17 @@ class BackToOfficeReport extends Component
             $this->reports = [];
             return;
         }
+
+        // Load existing geotagged photos for this tracking code
+        $this->existingPhotos = GeotagPhoto::where('travel_order_id', $this->tracking_code)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Initialize photo library state for each report
+        $this->photoSearchTerm = [];
+        $this->photoFilterUser = [];
+        $this->currentPhotoPage = [];
 
         // Generate reports based on enrolled activities
         $this->reports = [];
@@ -73,8 +91,13 @@ class BackToOfficeReport extends Component
                 'place' => '',
                 'accomplishment' => '',
                 'geotagged_photos' => [],
+                'selected_photo_ids' => [],
                 'monitoring_report' => null,
             ];
+            $this->photoSelectionMode[] = 'upload';
+            $this->photoSearchTerm[] = '';
+            $this->photoFilterUser[] = '';
+            $this->currentPhotoPage[] = 1;
         }
     }
 
@@ -89,14 +112,112 @@ class BackToOfficeReport extends Component
             'place' => '',
             'accomplishment' => '',
             'geotagged_photos' => [],
+            'selected_photo_ids' => [],
             'monitoring_report' => null,
         ];
+        $this->photoSelectionMode[] = 'upload';
+        $this->photoSearchTerm[] = '';
+        $this->photoFilterUser[] = '';
+        $this->currentPhotoPage[] = 1;
     }
 
     public function removeReport($index)
     {
         unset($this->reports[$index]);
+        unset($this->photoSelectionMode[$index]);
+        unset($this->photoSearchTerm[$index]);
+        unset($this->photoFilterUser[$index]);
+        unset($this->currentPhotoPage[$index]);
         $this->reports = array_values($this->reports); // Re-index array
+        $this->photoSelectionMode = array_values($this->photoSelectionMode);
+        $this->photoSearchTerm = array_values($this->photoSearchTerm);
+        $this->photoFilterUser = array_values($this->photoFilterUser);
+        $this->currentPhotoPage = array_values($this->currentPhotoPage);
+    }
+
+    public function togglePhotoMode($index, $mode)
+    {
+        $this->photoSelectionMode[$index] = $mode;
+        // Reset to first page when switching modes
+        $this->currentPhotoPage[$index] = 1;
+    }
+
+    public function togglePhotoSelection($reportIndex, $photoId)
+    {
+        if (!isset($this->reports[$reportIndex]['selected_photo_ids'])) {
+            $this->reports[$reportIndex]['selected_photo_ids'] = [];
+        }
+
+        $key = array_search($photoId, $this->reports[$reportIndex]['selected_photo_ids']);
+        if ($key !== false) {
+            // Deselect
+            unset($this->reports[$reportIndex]['selected_photo_ids'][$key]);
+            $this->reports[$reportIndex]['selected_photo_ids'] = array_values($this->reports[$reportIndex]['selected_photo_ids']);
+        } else {
+            // Select
+            $this->reports[$reportIndex]['selected_photo_ids'][] = $photoId;
+        }
+    }
+
+    public function changePhotoPage($index, $page)
+    {
+        $this->currentPhotoPage[$index] = $page;
+    }
+
+    public function updatedPhotoSearchTerm($value, $index)
+    {
+        // Reset to first page when searching
+        $this->currentPhotoPage[$index] = 1;
+    }
+
+    public function updatedPhotoFilterUser($value, $index)
+    {
+        // Reset to first page when filtering
+        $this->currentPhotoPage[$index] = 1;
+    }
+
+    public function getFilteredPhotos($reportIndex)
+    {
+        $photos = $this->existingPhotos ?? collect([]);
+
+        // Apply search filter
+        if (!empty($this->photoSearchTerm[$reportIndex])) {
+            $searchTerm = strtolower($this->photoSearchTerm[$reportIndex]);
+            $photos = $photos->filter(function ($photo) use ($searchTerm) {
+                return str_contains(strtolower($photo->user->name ?? ''), $searchTerm) ||
+                    str_contains(strtolower($photo->created_at->format('M d, Y')), $searchTerm);
+            });
+        }
+
+        // Apply user filter
+        if (!empty($this->photoFilterUser[$reportIndex])) {
+            $photos = $photos->filter(function ($photo) use ($reportIndex) {
+                return $photo->user_id == $this->photoFilterUser[$reportIndex];
+            });
+        }
+
+        return $photos;
+    }
+
+    public function getPaginatedPhotos($reportIndex)
+    {
+        $filteredPhotos = $this->getFilteredPhotos($reportIndex);
+        $currentPage = $this->currentPhotoPage[$reportIndex] ?? 1;
+        $perPage = $this->photosPerPage;
+
+        $offset = ($currentPage - 1) * $perPage;
+        return $filteredPhotos->slice($offset, $perPage);
+    }
+
+    public function getTotalPhotoPages($reportIndex)
+    {
+        $filteredPhotos = $this->getFilteredPhotos($reportIndex);
+        return (int) ceil($filteredPhotos->count() / $this->photosPerPage);
+    }
+
+    public function getUniqueUsers()
+    {
+        return ($this->existingPhotos ?? collect([]))->pluck('user')->unique('id')->sortBy('name');
     }
 
     protected function rules()
@@ -107,18 +228,20 @@ class BackToOfficeReport extends Component
             $rules["reports.{$index}.date_of_travel"] = 'required|string';
             $rules["reports.{$index}.purpose"] = 'required|string';
             $rules["reports.{$index}.purpose_type"] = 'required|string';
-            
+
             // Subproject name is required if purpose is Site Specific
             if (isset($report['purpose']) && $report['purpose'] === 'Site Specific') {
                 $rules["reports.{$index}.subproject_name"] = 'required|string|max:255';
                 // Monitoring report is optional for Site Specific
                 $rules["reports.{$index}.monitoring_report"] = 'nullable|file|mimes:pdf|max:20480';
             }
-            
+
             $rules["reports.{$index}.place"] = 'nullable|string|max:255';
             $rules["reports.{$index}.accomplishment"] = 'nullable|string';
             $rules["reports.{$index}.geotagged_photos"] = 'nullable|array';
             $rules["reports.{$index}.geotagged_photos.*"] = 'nullable|image|max:10240';
+            $rules["reports.{$index}.selected_photo_ids"] = 'nullable|array';
+            $rules["reports.{$index}.selected_photo_ids.*"] = 'nullable|integer|exists:geotag_photos,id';
         }
         return $rules;
     }
@@ -152,10 +275,10 @@ class BackToOfficeReport extends Component
             if (!empty($report['geotagged_photos'])) {
                 foreach ($report['geotagged_photos'] as $photoIndex => $photo) {
                     $path = $photo->getRealPath();
-                    
+
                     // Read EXIF data
                     $exif = @exif_read_data($path);
-                    
+
                     // Check if GPS data exists
                     if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
                         $this->addError(
@@ -166,7 +289,7 @@ class BackToOfficeReport extends Component
                 }
             }
         }
-        
+
         // Return true if no GPS errors were added
         return empty($this->getErrorBag()->get('reports.*.geotagged_photos.*'));
     }
@@ -187,6 +310,9 @@ class BackToOfficeReport extends Component
         foreach ($this->reports as $index => $report) {
             // Save photos
             $photoPaths = [];
+            $newlyUploadedPaths = []; // Track newly uploaded photo paths
+
+            // Handle newly uploaded photos
             if (!empty($report['geotagged_photos'])) {
                 foreach ($report['geotagged_photos'] as $photo) {
                     // Get original filename and extension
@@ -196,12 +322,21 @@ class BackToOfficeReport extends Component
                     // Generate unique filename with original name
                     $filename = $this->generateUniqueFilename($originalName, $extension, 'reports/photos');
                     $path = 'reports/photos/' . $filename;
-                    
+
                     // Compress and store the photo
                     $compressedImage = $this->compressImage($photo);
                     Storage::disk('public')->put($path, $compressedImage);
-                    
+
                     $photoPaths[] = $path;
+                    $newlyUploadedPaths[] = $path; // Store for later use
+                }
+            }
+
+            // Handle selected existing photos
+            if (!empty($report['selected_photo_ids'])) {
+                $selectedPhotos = GeotagPhoto::whereIn('id', $report['selected_photo_ids'])->get();
+                foreach ($selectedPhotos as $selectedPhoto) {
+                    $photoPaths[] = $selectedPhoto->photo_path;
                 }
             }
 
@@ -256,13 +391,15 @@ class BackToOfficeReport extends Component
                 'status' => 'Pending',
             ]);
 
-            // Store photos in geotag_photos table
-            foreach ($photoPaths as $photoPath) {
-                GeotagPhoto::create([
-                    'user_id' => Auth::id(),
-                    'travel_order_id' => $this->tracking_code,
-                    'photo_path' => $photoPath,
-                ]);
+            // Store only newly uploaded photos in geotag_photos table (not selected ones)
+            if (!empty($newlyUploadedPaths)) {
+                foreach ($newlyUploadedPaths as $path) {
+                    GeotagPhoto::create([
+                        'user_id' => Auth::id(),
+                        'travel_order_id' => $this->tracking_code,
+                        'photo_path' => $path,
+                    ]);
+                }
             }
         }
 
@@ -289,15 +426,17 @@ class BackToOfficeReport extends Component
      */
     private function generateUniqueFilename($originalName, $extension, $directory)
     {
+        // Sanitize filename: replace spaces and special characters
+        $originalName = preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName);
         $filename = $originalName . '.' . $extension;
         $counter = 1;
-        
+
         // Check if file exists and increment counter if needed
         while (Storage::disk('public')->exists($directory . '/' . $filename)) {
             $filename = $originalName . '_' . $counter . '.' . $extension;
             $counter++;
         }
-        
+
         return $filename;
     }
 
@@ -308,21 +447,21 @@ class BackToOfficeReport extends Component
     {
         $originalSize = $photo->getSize(); // Size in bytes
         $targetSize = 600 * 1024; // 600 KB in bytes
-        
+
         // If file is already small enough, return as-is
         if ($originalSize <= $targetSize) {
             return file_get_contents($photo->getRealPath());
         }
-        
+
         // Read and process image with Intervention Image
         $manager = new ImageManager(new Driver());
         $image = $manager->read($photo->getRealPath());
-        
+
         $extension = strtolower($photo->getClientOriginalExtension());
-        
+
         // Calculate compression ratio needed
         $ratio = $targetSize / $originalSize;
-        
+
         // Estimate quality needed (more aggressive for larger files)
         if ($ratio > 0.7) {
             $quality = 85; // Light compression needed
@@ -333,7 +472,7 @@ class BackToOfficeReport extends Component
         } else {
             $quality = 55; // Very heavy compression
         }
-        
+
         // For very large files (> 3x target), resize first
         if ($originalSize > ($targetSize * 3)) {
             $scaleFactor = sqrt($ratio); // Scale to roughly target size
@@ -341,7 +480,7 @@ class BackToOfficeReport extends Component
             $newHeight = (int)($image->height() * $scaleFactor);
             $image->scale(width: $newWidth, height: $newHeight);
         }
-        
+
         // Compress with calculated quality
         if (in_array($extension, ['jpg', 'jpeg'])) {
             $compressed = $image->toJpeg(quality: $quality)->toString();
@@ -349,12 +488,12 @@ class BackToOfficeReport extends Component
             // Convert other formats to JPEG
             $compressed = $image->toJpeg(quality: $quality)->toString();
         }
-        
+
         // If still too large, do one more pass with lower quality
         if (strlen($compressed) > $targetSize) {
             $compressed = $image->toJpeg(quality: 50)->toString();
         }
-        
+
         return $compressed;
     }
 

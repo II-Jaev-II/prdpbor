@@ -42,6 +42,7 @@ Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
     Route::get('/enroll-activity', EnrollActivity::class)->name('enroll-activity');
+    Route::get('/settings/e-signature', ESignature::class)->name('e-signature.edit');
 });
 
 // Routes accessible by both users and superiors

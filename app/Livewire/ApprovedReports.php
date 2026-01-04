@@ -74,7 +74,7 @@ class ApprovedReports extends Component
                     new ImagickImageBackEnd()
                 );
             }
-            
+
             $writer = new Writer($renderer);
             $qrCodePng = $writer->writeString($approvalId);
 
@@ -114,28 +114,28 @@ class ApprovedReports extends Component
     {
         $optimizedPhotos = [];
         $manager = new ImageManager(new Driver());
-        
+
         foreach ($reports as $report) {
             if (!empty($report->photos) && is_array($report->photos)) {
                 foreach ($report->photos as $photoPath) {
                     try {
                         $fullPath = storage_path('app/public/' . $photoPath);
-                        
+
                         if (!file_exists($fullPath)) {
                             continue;
                         }
 
                         // Load and optimize image
                         $image = $manager->read($fullPath);
-                        
+
                         // Resize to max width of 800px for PDF (maintains aspect ratio)
                         if ($image->width() > 800) {
                             $image->scale(width: 800);
                         }
-                        
+
                         // Compress to JPEG with 70% quality for faster PDF embedding
                         $optimized = $image->toJpeg(quality: 70)->toDataUri();
-                        
+
                         $optimizedPhotos[$photoPath] = $optimized;
                     } catch (\Exception $e) {
                         // If optimization fails, skip this photo
@@ -144,7 +144,7 @@ class ApprovedReports extends Component
                 }
             }
         }
-        
+
         return $optimizedPhotos;
     }
 

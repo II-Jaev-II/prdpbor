@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class GeotagPhoto extends Model
 {
@@ -28,6 +29,6 @@ class GeotagPhoto extends Model
 
     public function getPhotoUrlAttribute(): string
     {
-        return asset('storage/' . $this->photo_path);
+        return Storage::url($this->photo_path);
     }
 }

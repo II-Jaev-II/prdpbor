@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class EnrollActivity extends Model
 {
     protected $table = 'enrolled_activities';
-    
+
     protected $fillable = [
         'to_num',
+        'employee_name',
         'activity_name',
         'unit_component',
         'purpose',
@@ -18,5 +19,10 @@ class EnrollActivity extends Model
         'subproject_name',
         'start_date',
         'end_date',
+    ];
+
+    protected $casts = [
+        'employee_name' => 'array',
+        'unit_component' => 'array',
     ];
 }

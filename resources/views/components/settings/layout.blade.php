@@ -12,6 +12,9 @@
             @if (auth()->user()->isSuperior())
                 <flux:navlist.item :href="route('superior.e-signature.edit')" wire:navigate>{{ __('E-Signature') }}
                 </flux:navlist.item>
+            @elseif (auth()->user()->isUser())
+                <flux:navlist.item :href="route('user.e-signature.edit')" wire:navigate>{{ __('E-Signature') }}
+                </flux:navlist.item>
             @endif
         </flux:navlist>
     </div>

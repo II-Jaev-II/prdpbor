@@ -59,10 +59,10 @@ class GeotagPhotos extends Component
         if (!empty($this->photos)) {
             foreach ($this->photos as $photoIndex => $photo) {
                 $path = $photo->getRealPath();
-                
+
                 // Read EXIF data
                 $exif = @exif_read_data($path);
-                
+
                 // Check if GPS data exists
                 if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
                     $this->addError(
@@ -72,7 +72,7 @@ class GeotagPhotos extends Component
                 }
             }
         }
-        
+
         // Return true if no GPS errors were added
         return empty($this->getErrorBag()->get('photos.*'));
     }
@@ -99,11 +99,11 @@ class GeotagPhotos extends Component
                 // Get original filename and extension
                 $originalName = pathinfo($photo->getClientOriginalName(), PATHINFO_FILENAME);
                 $extension = $photo->getClientOriginalExtension();
-                
+
                 // Generate unique filename with original name
                 $filename = $this->generateUniqueFilename($originalName, $extension);
                 $path = 'geotag-photos/' . $filename;
-                
+
                 // Compress and store the photo
                 $compressedImage = $this->compressImage($photo);
                 Storage::disk('public')->put($path, $compressedImage);
@@ -129,15 +129,17 @@ class GeotagPhotos extends Component
      */
     private function generateUniqueFilename($originalName, $extension)
     {
+        // Sanitize filename: replace spaces and special characters
+        $originalName = preg_replace('/[^A-Za-z0-9_-]/', '_', $originalName);
         $filename = $originalName . '.' . $extension;
         $counter = 1;
-        
+
         // Check if file exists and increment counter if needed
         while (Storage::disk('public')->exists('geotag-photos/' . $filename)) {
             $filename = $originalName . '_' . $counter . '.' . $extension;
             $counter++;
         }
-        
+
         return $filename;
     }
 
@@ -148,21 +150,21 @@ class GeotagPhotos extends Component
     {
         $originalSize = $photo->getSize(); // Size in bytes
         $targetSize = 600 * 1024; // 600 KB in bytes
-        
+
         // If file is already small enough, return as-is
         if ($originalSize <= $targetSize) {
             return file_get_contents($photo->getRealPath());
         }
-        
+
         // Read and process image with Intervention Image
         $manager = new ImageManager(new Driver());
         $image = $manager->read($photo->getRealPath());
-        
+
         $extension = strtolower($photo->getClientOriginalExtension());
-        
+
         // Calculate compression ratio needed
         $ratio = $targetSize / $originalSize;
-        
+
         // Estimate quality needed (more aggressive for larger files)
         if ($ratio > 0.7) {
             $quality = 85; // Light compression needed
@@ -173,7 +175,7 @@ class GeotagPhotos extends Component
         } else {
             $quality = 55; // Very heavy compression
         }
-        
+
         // For very large files (> 3x target), resize first
         if ($originalSize > ($targetSize * 3)) {
             $scaleFactor = sqrt($ratio); // Scale to roughly target size
@@ -181,7 +183,7 @@ class GeotagPhotos extends Component
             $newHeight = (int)($image->height() * $scaleFactor);
             $image->scale(width: $newWidth, height: $newHeight);
         }
-        
+
         // Compress with calculated quality
         if (in_array($extension, ['jpg', 'jpeg'])) {
             $compressed = $image->toJpeg(quality: $quality)->toString();
@@ -189,12 +191,12 @@ class GeotagPhotos extends Component
             // Convert other formats to JPEG
             $compressed = $image->toJpeg(quality: $quality)->toString();
         }
-        
+
         // If still too large, do one more pass with lower quality
         if (strlen($compressed) > $targetSize) {
             $compressed = $image->toJpeg(quality: 50)->toString();
         }
-        
+
         return $compressed;
     }
 
@@ -204,7 +206,7 @@ class GeotagPhotos extends Component
 
         if ($photo && $photo->user_id == Auth::id()) {
             $photoPath = $photo->photo_path;
-            
+
             // Delete file from storage
             Storage::disk('public')->delete($photoPath);
 
@@ -220,7 +222,7 @@ class GeotagPhotos extends Component
                 $photos = $report->photos;
                 if (is_array($photos)) {
                     // Remove the deleted photo path from the array
-                    $photos = array_values(array_filter($photos, function($path) use ($photoPath) {
+                    $photos = array_values(array_filter($photos, function ($path) use ($photoPath) {
                         return $path !== $photoPath;
                     }));
                     $report->photos = $photos;
