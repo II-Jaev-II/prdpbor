@@ -32,7 +32,7 @@ final class PendingTable extends PowerGridComponent
     {
         return BackToOfficeReport::query()
             ->where('user_id', Auth::id())
-            ->where('status', 'Pending');
+            ->whereIn('status', ['Pending', 'For Revision']);
     }
 
     public function relationSearch(): array
@@ -53,11 +53,11 @@ final class PendingTable extends PowerGridComponent
             ->add('accomplishment')
             ->add('status')
             ->add('created_at_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->created_at)->format('F j, Y'))
-            ->add('days_pending', function(BackToOfficeReport $model) {
+            ->add('days_pending', function (BackToOfficeReport $model) {
                 $createdAt = Carbon::parse($model->created_at);
                 $now = Carbon::now();
                 $days = (int) floor($createdAt->diffInDays($now));
-                
+
                 if ($days >= 1) {
                     return $days . ' day' . ($days > 1 ? 's' : '');
                 }

@@ -17,6 +17,8 @@ class PendingReports extends Component
 
     public bool $showEditModal = false;
     public ?int $editingId = null;
+    public ?string $superiorRemarks = null;
+    public ?string $returnedAt = null;
     public array $editForm = [
         'travel_order_id' => '',
         'activity_name' => '',
@@ -44,7 +46,7 @@ class PendingReports extends Component
 
         if ($report) {
             $this->editingId = $report->id;
-            
+
             // Format date range for display
             $dateRange = '';
             if ($report->start_date && $report->end_date) {
@@ -64,7 +66,7 @@ class PendingReports extends Component
                 $purposeType = $report->enrollActivity->purpose_type ?? '';
                 $subprojectName = $report->enrollActivity->subproject_name ?? '';
             }
-            
+
             $this->editForm = [
                 'travel_order_id' => $report->travel_order_id ?? '',
                 'activity_name' => $activityName,
@@ -83,6 +85,8 @@ class PendingReports extends Component
             $this->newMonitoringReport = null;
             $this->photosToDelete = [];
             $this->monitoringReportToDelete = null;
+            $this->superiorRemarks = $report->superior_remarks;
+            $this->returnedAt = $report->returned_at;
             $this->showEditModal = true;
         }
     }
@@ -112,10 +116,10 @@ class PendingReports extends Component
         if (!empty($this->newPhotos)) {
             foreach ($this->newPhotos as $photoIndex => $photo) {
                 $path = $photo->getRealPath();
-                
+
                 // Read EXIF data
                 $exif = @exif_read_data($path);
-                
+
                 // Check if GPS data exists
                 if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
                     $this->addError(
@@ -125,7 +129,7 @@ class PendingReports extends Component
                 }
             }
         }
-        
+
         // Return true if no GPS errors were added
         return empty($this->getErrorBag()->get('newPhotos.*'));
     }
@@ -158,7 +162,7 @@ class PendingReports extends Component
             // Delete photos marked for deletion
             foreach ($this->photosToDelete as $photoPath) {
                 Storage::disk('public')->delete($photoPath);
-                
+
                 // Also remove from geotag_photos table
                 GeotagPhoto::where('user_id', Auth::id())
                     ->where('photo_path', $photoPath)
@@ -181,13 +185,13 @@ class PendingReports extends Component
                     // Generate unique filename with original name
                     $filename = $this->generateUniqueFilename($originalName, $extension, 'reports/photos');
                     $path = 'reports/photos/' . $filename;
-                    
+
                     // Compress and store the photo
                     $compressedImage = $this->compressImage($photo);
                     Storage::disk('public')->put($path, $compressedImage);
-                    
+
                     $photoPaths[] = $path;
-                    
+
                     // Store in geotag_photos table
                     GeotagPhoto::create([
                         'user_id' => Auth::id(),
@@ -220,6 +224,9 @@ class PendingReports extends Component
                 'accomplishment' => $this->editForm['accomplishment'],
                 'photos' => $photoPaths,
                 'monitoring_report' => $monitoringReportPath,
+                'status' => 'Pending', // Reset status to Pending when resubmitting
+                'superior_remarks' => null, // Clear remarks
+                'returned_at' => null, // Clear return date
             ]);
 
             $this->closeModal();
@@ -258,6 +265,8 @@ class PendingReports extends Component
     {
         $this->showEditModal = false;
         $this->editingId = null;
+        $this->superiorRemarks = null;
+        $this->returnedAt = null;
         $this->editForm = [
             'travel_order_id' => '',
             'activity_name' => '',
@@ -286,13 +295,13 @@ class PendingReports extends Component
     {
         $filename = $originalName . '.' . $extension;
         $counter = 1;
-        
+
         // Check if file exists and increment counter if needed
         while (Storage::disk('public')->exists($directory . '/' . $filename)) {
             $filename = $originalName . '_' . $counter . '.' . $extension;
             $counter++;
         }
-        
+
         return $filename;
     }
 
@@ -303,21 +312,21 @@ class PendingReports extends Component
     {
         $originalSize = $photo->getSize(); // Size in bytes
         $targetSize = 600 * 1024; // 600 KB in bytes
-        
+
         // If file is already small enough, return as-is
         if ($originalSize <= $targetSize) {
             return file_get_contents($photo->getRealPath());
         }
-        
+
         // Read and process image with Intervention Image
         $manager = new ImageManager(new Driver());
         $image = $manager->read($photo->getRealPath());
-        
+
         $extension = strtolower($photo->getClientOriginalExtension());
-        
+
         // Calculate compression ratio needed
         $ratio = $targetSize / $originalSize;
-        
+
         // Estimate quality needed (more aggressive for larger files)
         if ($ratio > 0.7) {
             $quality = 85; // Light compression needed
@@ -328,7 +337,7 @@ class PendingReports extends Component
         } else {
             $quality = 55; // Very heavy compression
         }
-        
+
         // For very large files (> 3x target), resize first
         if ($originalSize > ($targetSize * 3)) {
             $scaleFactor = sqrt($ratio); // Scale to roughly target size
@@ -336,7 +345,7 @@ class PendingReports extends Component
             $newHeight = (int)($image->height() * $scaleFactor);
             $image->scale(width: $newWidth, height: $newHeight);
         }
-        
+
         // Compress with calculated quality
         if (in_array($extension, ['jpg', 'jpeg'])) {
             $compressed = $image->toJpeg(quality: $quality)->toString();
@@ -344,12 +353,12 @@ class PendingReports extends Component
             // Convert other formats to JPEG
             $compressed = $image->toJpeg(quality: $quality)->toString();
         }
-        
+
         // If still too large, do one more pass with lower quality
         if (strlen($compressed) > $targetSize) {
             $compressed = $image->toJpeg(quality: 50)->toString();
         }
-        
+
         return $compressed;
     }
 

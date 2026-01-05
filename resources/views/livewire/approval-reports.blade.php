@@ -151,10 +151,32 @@
                                         class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                                         {{ $report->status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : '' }}
                                         {{ $report->status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : '' }}
-                                        {{ $report->status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : '' }}">
+                                        {{ $report->status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : '' }}
+                                        {{ $report->status === 'For Revision' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : '' }}">
                                         {{ $report->status }}
                                     </span>
                                 </div>
+
+                                {{-- Superior Remarks (if returned for revision) --}}
+                                @if ($report->status === 'For Revision' && $report->superior_remarks)
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                            Superior's Remarks
+                                        </label>
+                                        <div
+                                            class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                                            <p class="text-base text-zinc-900 dark:text-white whitespace-pre-wrap">
+                                                {{ $report->superior_remarks }}
+                                            </p>
+                                            @if ($report->returned_at)
+                                                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                                                    Returned on
+                                                    {{ \Carbon\Carbon::parse($report->returned_at)->format('F j, Y g:i A') }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
 
                                 {{-- Approval ID (if approved) --}}
                                 @if ($report->status === 'Approved' && $report->approval_id)
@@ -253,6 +275,10 @@
                         class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
                         Approve Report
                     </button>
+                    <button type="button" wire:click="openReturnModal"
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors">
+                        Return for Revision
+                    </button>
                 @endif
             </div>
         </div>
@@ -283,6 +309,45 @@
                     </flux:button>
                     <flux:button variant="primary" type="submit">
                         Approve
+                    </flux:button>
+                </div>
+            </div>
+        </form>
+    </flux:modal>
+
+    {{-- Return for Revision Modal --}}
+    <flux:modal name="return-modal" wire:model="showReturnModal" class="max-w-2xl">
+        <form wire:submit="returnReport">
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">Return Report for Revision</flux:heading>
+                    <flux:subheading>Provide remarks on what needs to be corrected or improved</flux:subheading>
+                </div>
+
+                <div>
+                    <label for="remarks" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        Remarks/Comments <span class="text-red-500">*</span>
+                    </label>
+                    <textarea wire:model="superiorRemarks" id="remarks" rows="6"
+                        class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-800 dark:text-white"
+                        placeholder="Example: The uploaded photos are not clear enough to verify the location. Please upload higher quality images with visible landmarks. Also, the accomplishment section needs more detail about the specific activities performed during the visit."
+                        required></textarea>
+                    @error('superiorRemarks')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <flux:subheading class="text-xs">
+                    Please be specific about what needs to be corrected. The user will receive this message and will
+                    need to resubmit the report with the necessary changes.
+                </flux:subheading>
+
+                <div class="flex gap-2 justify-end">
+                    <flux:button variant="ghost" type="button" wire:click="closeReturnModal">
+                        Cancel
+                    </flux:button>
+                    <flux:button variant="primary" type="submit" class="bg-orange-600 hover:bg-orange-700">
+                        Return to User
                     </flux:button>
                 </div>
             </div>

@@ -25,6 +25,8 @@ class BackToOfficeReport extends Model
         'status',
         'approval_id',
         'approved_by',
+        'superior_remarks',
+        'returned_at',
     ];
 
     protected $casts = [
