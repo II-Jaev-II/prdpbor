@@ -6,6 +6,7 @@ use App\Models\BackToOfficeReport as BackToOfficeReportModel;
 use App\Models\EnrollActivity;
 use App\Models\GeotagPhoto;
 use App\Models\SubprojectList;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
@@ -68,9 +69,9 @@ class BackToOfficeReport extends Component
         foreach ($activities as $activity) {
             // Format date range
             if ($activity->start_date === $activity->end_date) {
-                $dateOfTravel = $activity->start_date;
+                $dateOfTravel = Carbon::parse($activity->start_date)->format('F j, Y');
             } else {
-                $dateOfTravel = $activity->start_date . ' to ' . $activity->end_date;
+                $dateOfTravel = Carbon::parse($activity->start_date)->format('F j, Y') . ' to ' . Carbon::parse($activity->end_date)->format('F j, Y');
             }
 
             // Get subproject name if subproject_id exists
@@ -82,16 +83,28 @@ class BackToOfficeReport extends Component
                 $subprojectName = $activity->subproject_name;
             }
 
+            // Get travel dates array
+            $travelDates = $this->getTravelDates($dateOfTravel);
+            
+            // Initialize date-keyed photo structure
+            $geotaggedPhotos = [];
+            $selectedPhotoIds = [];
+            foreach ($travelDates as $date) {
+                $geotaggedPhotos[$date] = null;
+                $selectedPhotoIds[$date] = [];
+            }
+            
             $this->reports[] = [
                 'activity_name' => $activity->activity_name,
                 'date_of_travel' => $dateOfTravel,
+                'travel_dates' => $travelDates,
                 'purpose' => $activity->purpose,
                 'purpose_type' => $activity->purpose_type,
                 'subproject_name' => $subprojectName,
                 'place' => '',
                 'accomplishment' => '',
-                'geotagged_photos' => [],
-                'selected_photo_ids' => [],
+                'geotagged_photos' => $geotaggedPhotos,
+                'selected_photo_ids' => $selectedPhotoIds,
                 'monitoring_report' => null,
             ];
             $this->photoSelectionMode[] = 'upload';
@@ -106,6 +119,7 @@ class BackToOfficeReport extends Component
         $this->reports[] = [
             'activity_name' => '',
             'date_of_travel' => '',
+            'travel_dates' => [],
             'purpose' => '',
             'purpose_type' => '',
             'subproject_name' => '',
@@ -142,20 +156,52 @@ class BackToOfficeReport extends Component
         $this->currentPhotoPage[$index] = 1;
     }
 
-    public function togglePhotoSelection($reportIndex, $photoId)
+    /**
+     * Parse date_of_travel string and return array of dates
+     */
+    public function getTravelDates($dateOfTravel)
     {
-        if (!isset($this->reports[$reportIndex]['selected_photo_ids'])) {
-            $this->reports[$reportIndex]['selected_photo_ids'] = [];
-        }
-
-        $key = array_search($photoId, $this->reports[$reportIndex]['selected_photo_ids']);
-        if ($key !== false) {
-            // Deselect
-            unset($this->reports[$reportIndex]['selected_photo_ids'][$key]);
-            $this->reports[$reportIndex]['selected_photo_ids'] = array_values($this->reports[$reportIndex]['selected_photo_ids']);
+        $dates = [];
+        
+        if (strpos($dateOfTravel, ' to ') !== false) {
+            // Date range
+            $parts = explode(' to ', $dateOfTravel);
+            $startDate = Carbon::parse($parts[0]);
+            $endDate = Carbon::parse($parts[1]);
+            
+            $currentDate = $startDate->copy();
+            while ($currentDate->lte($endDate)) {
+                $dates[] = $currentDate->format('Y-m-d');
+                $currentDate->addDay();
+            }
         } else {
-            // Select
-            $this->reports[$reportIndex]['selected_photo_ids'][] = $photoId;
+            // Single date
+            $dates[] = Carbon::parse($dateOfTravel)->format('Y-m-d');
+        }
+        
+        return $dates;
+    }
+
+    public function togglePhotoSelection($reportIndex, $photoId, $date = null)
+    {
+        if ($date) {
+            // Date-specific selection
+            if (!isset($this->reports[$reportIndex]['selected_photo_ids'])) {
+                $this->reports[$reportIndex]['selected_photo_ids'] = [];
+            }
+            if (!isset($this->reports[$reportIndex]['selected_photo_ids'][$date])) {
+                $this->reports[$reportIndex]['selected_photo_ids'][$date] = [];
+            }
+
+            $key = array_search($photoId, $this->reports[$reportIndex]['selected_photo_ids'][$date]);
+            if ($key !== false) {
+                // Deselect
+                unset($this->reports[$reportIndex]['selected_photo_ids'][$date][$key]);
+                $this->reports[$reportIndex]['selected_photo_ids'][$date] = array_values($this->reports[$reportIndex]['selected_photo_ids'][$date]);
+            } else {
+                // Select - replace any existing selection for this date
+                $this->reports[$reportIndex]['selected_photo_ids'][$date] = [$photoId];
+            }
         }
     }
 
@@ -239,9 +285,14 @@ class BackToOfficeReport extends Component
             $rules["reports.{$index}.place"] = 'nullable|string|max:255';
             $rules["reports.{$index}.accomplishment"] = 'nullable|string';
             $rules["reports.{$index}.geotagged_photos"] = 'nullable|array';
-            $rules["reports.{$index}.geotagged_photos.*"] = 'nullable|image|max:10240';
             $rules["reports.{$index}.selected_photo_ids"] = 'nullable|array';
-            $rules["reports.{$index}.selected_photo_ids.*"] = 'nullable|integer|exists:geotag_photos,id';
+            
+            // Validate each date has a photo (either uploaded or selected)
+            if (!empty($report['travel_dates'])) {
+                foreach ($report['travel_dates'] as $date) {
+                    $rules["reports.{$index}.geotagged_photos.{$date}"] = 'nullable|image|max:10240';
+                }
+            }
         }
         return $rules;
     }
@@ -271,27 +322,37 @@ class BackToOfficeReport extends Component
      */
     protected function validateGpsMetadata()
     {
+        $hasErrors = false;
+        
         foreach ($this->reports as $index => $report) {
-            if (!empty($report['geotagged_photos'])) {
-                foreach ($report['geotagged_photos'] as $photoIndex => $photo) {
-                    $path = $photo->getRealPath();
-
-                    // Read EXIF data
-                    $exif = @exif_read_data($path);
-
-                    // Check if GPS data exists
-                    if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
-                        $this->addError(
-                            "reports.{$index}.geotagged_photos.{$photoIndex}",
-                            "Photo '{$photo->getClientOriginalName()}' does not contain GPS coordinates. Please upload photos taken with location services enabled."
-                        );
+            if (!empty($report['travel_dates'])) {
+                foreach ($report['travel_dates'] as $date) {
+                    $photo = null;
+                    
+                    // Check if there's an uploaded photo for this date
+                    if (!empty($report['geotagged_photos'][$date])) {
+                        $photo = $report['geotagged_photos'][$date];
+                    }
+                    
+                    // Validate GPS metadata for uploaded photos (if provided)
+                    if ($photo && is_object($photo)) {
+                        $path = $photo->getRealPath();
+                        $exif = @exif_read_data($path);
+                        
+                        if (!$exif || !isset($exif['GPSLatitude']) || !isset($exif['GPSLongitude'])) {
+                            $formattedDate = Carbon::parse($date)->format('F j, Y');
+                            $this->addError(
+                                "reports.{$index}.geotagged_photos.{$date}",
+                                "Photo for {$formattedDate} does not contain GPS coordinates. Please upload photos taken with location services enabled."
+                            );
+                            $hasErrors = true;
+                        }
                     }
                 }
             }
         }
 
-        // Return true if no GPS errors were added
-        return empty($this->getErrorBag()->get('reports.*.geotagged_photos.*'));
+        return !$hasErrors;
     }
 
     public function submit()
@@ -312,31 +373,37 @@ class BackToOfficeReport extends Component
             $photoPaths = [];
             $newlyUploadedPaths = []; // Track newly uploaded photo paths
 
-            // Handle newly uploaded photos
+            // Handle newly uploaded photos (date-keyed)
             if (!empty($report['geotagged_photos'])) {
-                foreach ($report['geotagged_photos'] as $photo) {
-                    // Get original filename and extension
-                    $originalName = pathinfo($photo->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension = $photo->getClientOriginalExtension();
+                foreach ($report['geotagged_photos'] as $date => $photo) {
+                    if ($photo && is_object($photo)) {
+                        // Get original filename and extension
+                        $originalName = pathinfo($photo->getClientOriginalName(), PATHINFO_FILENAME);
+                        $extension = $photo->getClientOriginalExtension();
 
-                    // Generate unique filename with original name
-                    $filename = $this->generateUniqueFilename($originalName, $extension, 'reports/photos');
-                    $path = 'reports/photos/' . $filename;
+                        // Generate unique filename with original name
+                        $filename = $this->generateUniqueFilename($originalName, $extension, 'reports/photos');
+                        $path = 'reports/photos/' . $filename;
 
-                    // Compress and store the photo
-                    $compressedImage = $this->compressImage($photo);
-                    Storage::disk('public')->put($path, $compressedImage);
+                        // Compress and store the photo
+                        $compressedImage = $this->compressImage($photo);
+                        Storage::disk('public')->put($path, $compressedImage);
 
-                    $photoPaths[] = $path;
-                    $newlyUploadedPaths[] = $path; // Store for later use
+                        $photoPaths[] = $path;
+                        $newlyUploadedPaths[] = $path; // Store for later use
+                    }
                 }
             }
 
-            // Handle selected existing photos
+            // Handle selected existing photos (date-keyed)
             if (!empty($report['selected_photo_ids'])) {
-                $selectedPhotos = GeotagPhoto::whereIn('id', $report['selected_photo_ids'])->get();
-                foreach ($selectedPhotos as $selectedPhoto) {
-                    $photoPaths[] = $selectedPhoto->photo_path;
+                foreach ($report['selected_photo_ids'] as $date => $photoIds) {
+                    if (!empty($photoIds)) {
+                        $selectedPhotos = GeotagPhoto::whereIn('id', $photoIds)->get();
+                        foreach ($selectedPhotos as $selectedPhoto) {
+                            $photoPaths[] = $selectedPhoto->photo_path;
+                        }
+                    }
                 }
             }
 
@@ -358,15 +425,15 @@ class BackToOfficeReport extends Component
                 $monitoringReportPath = $report['monitoring_report']->storeAs('reports/monitoring', $newFileName, 'public');
             }
 
-            // Parse date of travel
+            // Parse date of travel - convert from formatted string back to Y-m-d
             $dateOfTravel = $report['date_of_travel'];
             if (strpos($dateOfTravel, ' to ') !== false) {
                 $dates = explode(' to ', $dateOfTravel);
-                $startDate = trim($dates[0]);
-                $endDate = trim($dates[1]);
+                $startDate = Carbon::parse(trim($dates[0]))->format('Y-m-d');
+                $endDate = Carbon::parse(trim($dates[1]))->format('Y-m-d');
             } else {
-                $startDate = $dateOfTravel;
-                $endDate = $dateOfTravel;
+                $startDate = Carbon::parse($dateOfTravel)->format('Y-m-d');
+                $endDate = $startDate;
             }
 
             // Find the matching enrolled activity

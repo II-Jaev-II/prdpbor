@@ -37,10 +37,11 @@ final class ForApprovalTable extends PowerGridComponent
                 $query->where('unit_component', Auth::user()->superior_role);
             })
             ->with('user')
-            ->select('report_num', 'status', 'user_id')
+            ->select('report_num', 'status', 'user_id', 'travel_order_id')
             ->selectRaw('MIN(id) as id')
+            ->selectRaw('MIN(created_at) as submitted_at')
             ->selectRaw('COUNT(*) as reports_count')
-            ->groupBy('report_num', 'status', 'user_id');
+            ->groupBy('report_num', 'status', 'user_id', 'travel_order_id');
     }
 
     public function relationSearch(): array
@@ -51,22 +52,34 @@ final class ForApprovalTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
-            ->add('report_num')
+            ->add('travel_order_id')
             ->add('user_name', fn($row) => $row->user->name ?? 'Unknown')
             ->add('status')
+            ->add('submitted_at_formatted', fn($row) => $row->submitted_at ? Carbon::parse($row->submitted_at)->format('F j, Y') : 'N/A')
+            ->add('days_pending', function($row) {
+                if (!$row->submitted_at) return 'N/A';
+                $days = (int) Carbon::parse($row->submitted_at)->diffInDays(now());
+                return $days >= 1 ? $days . ' day(s)' : '-';
+            })
             ->add('reports_count', fn($row) => $row->reports_count ?? 1);
     }
 
     public function columns(): array
     {
         return [
-            Column::make('Report Number', 'report_num')
+            Column::make('Travel Order ID', 'travel_order_id')
                 ->sortable()
                 ->searchable(),
 
             Column::make('Submitted By', 'user_name')
                 ->sortable()
                 ->searchable(),
+
+            Column::make('Submitted At', 'submitted_at_formatted')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('Days Pending', 'days_pending'),
 
             Column::make('Status', 'status')
                 ->sortable()

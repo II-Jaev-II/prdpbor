@@ -43,23 +43,32 @@ final class PendingTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
-            ->add('report_num')
+            ->add('travel_order_id')
             ->add('start_date_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->start_date)->format('F j, Y'))
             ->add(
                 'end_date_formatted',
                 fn(BackToOfficeReport $model) =>
                 $model->end_date ? Carbon::parse($model->end_date)->format('F j, Y') : Carbon::parse($model->start_date)->format('F j, Y')
             )
-            ->add('purpose')
-            ->add('place')
             ->add('accomplishment')
-            ->add('status');
+            ->add('status')
+            ->add('created_at_formatted', fn(BackToOfficeReport $model) => Carbon::parse($model->created_at)->format('F j, Y'))
+            ->add('days_pending', function(BackToOfficeReport $model) {
+                $createdAt = Carbon::parse($model->created_at);
+                $now = Carbon::now();
+                $days = (int) floor($createdAt->diffInDays($now));
+                
+                if ($days >= 1) {
+                    return $days . ' day' . ($days > 1 ? 's' : '');
+                }
+                return '-';
+            });
     }
 
     public function columns(): array
     {
         return [
-            Column::make('Report #', 'report_num')
+            Column::make('Travel Order ID', 'travel_order_id')
                 ->sortable()
                 ->searchable(),
 
@@ -69,17 +78,15 @@ final class PendingTable extends PowerGridComponent
             Column::make('End Date', 'end_date_formatted', 'end_date')
                 ->sortable(),
 
-            Column::make('Purpose', 'purpose')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Place', 'place')
-                ->sortable()
-                ->searchable(),
-
             Column::make('Status', 'status')
                 ->sortable()
                 ->searchable(),
+
+            Column::make('Submitted At', 'created_at_formatted', 'created_at')
+                ->sortable(),
+
+            Column::make('Days Pending', 'days_pending', 'created_at')
+                ->sortable(),
 
             Column::action('Action')
         ];

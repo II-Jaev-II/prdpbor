@@ -13,12 +13,28 @@
             <x-app-logo />
         </a>
 
+        @php
+            $submittedCount = \App\Models\BackToOfficeReport::query()
+                ->where('user_id', auth()->id())
+                ->where('status', 'Pending')
+                ->count();
+        @endphp
+        
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Platform')" class="grid">
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>{{ __('Report Form') }}</flux:navlist.item>
                 <flux:navlist.item icon="document-text" :href="route('pending-reports')"
-                    :current="request()->routeIs('pending-reports')" wire:navigate>{{ __('Submitted Reports') }}
+                    :current="request()->routeIs('pending-reports')" wire:navigate>
+                    <div class="flex items-center justify-between w-full">
+                        <span>{{ __('Submitted Reports') }}</span>
+                        @if ($submittedCount > 0)
+                            <span
+                                class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                                {{ $submittedCount }}
+                            </span>
+                        @endif
+                    </div>
                 </flux:navlist.item>
                 <flux:navlist.item icon="document-check" :href="route('approved-reports')"
                     :current="request()->routeIs('approved-reports')" wire:navigate>{{ __('Approved Reports') }}

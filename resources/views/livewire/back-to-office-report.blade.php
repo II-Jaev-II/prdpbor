@@ -179,185 +179,145 @@
                             @enderror
                         </div>
 
-                        <!-- Geotagged Photo -->
-                        <div>
-                            <label for="geotagged_photos_{{ $index }}"
-                                class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                                Geotagged Photo (at least 1)
-                            </label>
+                        <!-- Geotagged Photos (One per Date) -->
+                        @if (!empty($report['travel_dates']))
+                            <div>
+                                <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                                    Geotagged Photos (One photo per day)
+                                </label>
+                                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                                    Upload one geotagged photo for each day of travel. You can upload new photos or select from your photo library.
+                                </p>
 
-                            <!-- Photo Selection Mode Toggle -->
-                            <div class="mb-4 flex gap-2 rounded-lg bg-gray-100 p-1 dark:bg-neutral-800">
-                                <button type="button" wire:click="togglePhotoMode({{ $index }}, 'upload')"
-                                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors {{ isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'upload' ? 'bg-white text-blue-600 shadow-sm dark:bg-neutral-700 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200' }}">
-                                    Upload New Photos
-                                </button>
-                                <button type="button" wire:click="togglePhotoMode({{ $index }}, 'select')"
-                                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors {{ isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'select' ? 'bg-white text-blue-600 shadow-sm dark:bg-neutral-700 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200' }}">
-                                    Select from Library
-                                </button>
-                            </div>
-
-                            <!-- Upload New Photos Mode -->
-                            @if (!isset($photoSelectionMode[$index]) || $photoSelectionMode[$index] === 'upload')
-                                <div>
-                                    <input type="file" id="geotagged_photos_{{ $index }}"
-                                        wire:model="reports.{{ $index }}.geotagged_photos" accept="image/*"
-                                        multiple
-                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:file:bg-blue-600 dark:hover:file:bg-blue-700 dark:focus:border-blue-500">
-                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload one or more
-                                        geotagged photos from your device</p>
-
-                                    @error('reports.' . $index . '.geotagged_photos')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-                                    @error('reports.' . $index . '.geotagged_photos.*')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-
-                                    <!-- Photo Preview -->
-                                    @if (!empty($report['geotagged_photos']))
-                                        <div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-                                            @foreach ($report['geotagged_photos'] as $photo)
-                                                <div class="relative">
-                                                    <img src="{{ $photo->temporaryUrl() }}"
-                                                        class="h-32 w-full rounded-lg object-cover">
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endif
-
-                                    <div wire:loading wire:target="reports.{{ $index }}.geotagged_photos"
-                                        class="mt-2 text-sm text-blue-600 dark:text-blue-400">
-                                        Uploading photos...
-                                    </div>
+                                <!-- Photo Selection Mode Toggle -->
+                                <div class="mb-4 flex gap-2 rounded-lg bg-gray-100 p-1 dark:bg-neutral-800">
+                                    <button type="button" wire:click="togglePhotoMode({{ $index }}, 'upload')"
+                                        class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors {{ isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'upload' ? 'bg-white text-blue-600 shadow-sm dark:bg-neutral-700 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200' }}">
+                                        Upload New Photos
+                                    </button>
+                                    <button type="button" wire:click="togglePhotoMode({{ $index }}, 'select')"
+                                        class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors {{ isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'select' ? 'bg-white text-blue-600 shadow-sm dark:bg-neutral-700 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200' }}">
+                                        Select from Library
+                                    </button>
                                 </div>
-                            @endif
 
-                            <!-- Select from Library Mode -->
-                            @if (isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'select')
-                                <div>
-                                    @if (count($existingPhotos) > 0)
-                                        <!-- Search and Filter Bar -->
-                                        <div class="mb-4 flex flex-col gap-3 sm:flex-row">
-                                            <div class="flex-1">
-                                                <input type="text"
-                                                    wire:model.live.debounce.300ms="photoSearchTerm.{{ $index }}"
-                                                    placeholder="Search by uploader name or date..."
-                                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500">
-                                            </div>
-                                            <div class="w-full sm:w-48">
-                                                <select wire:model.live="photoFilterUser.{{ $index }}"
-                                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white">
-                                                    <option value="">All Users</option>
-                                                    @foreach ($this->getUniqueUsers() as $user)
-                                                        <option value="{{ $user->id }}">{{ $user->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    @foreach ($report['travel_dates'] as $dateKey => $date)
+                                        @php
+                                            $formattedDate = \Carbon\Carbon::parse($date)->format('F j, Y');
+                                            $dayOfWeek = \Carbon\Carbon::parse($date)->format('l');
+                                        @endphp
+                                        
+                                        <div class="rounded-lg border-2 border-gray-300 bg-gray-50 p-4 dark:border-neutral-600 dark:bg-neutral-800">
+                                            <h3 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">
+                                                {{ $formattedDate }} <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ $dayOfWeek }})</span>
+                                            </h3>
 
-                                        <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-                                            Click on photos to select them for this report. Showing
-                                            {{ $this->getPaginatedPhotos($index)->count() }} of
-                                            {{ $this->getFilteredPhotos($index)->count() }} photos.
-                                        </p>
+                                            <!-- Upload New Photo Mode -->
+                                            @if (!isset($photoSelectionMode[$index]) || $photoSelectionMode[$index] === 'upload')
+                                                <div>
+                                                    <input type="file" id="geotagged_photos_{{ $index }}_{{ $date }}"
+                                                        wire:model="reports.{{ $index }}.geotagged_photos.{{ $date }}" 
+                                                        accept="image/*"
+                                                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:file:bg-blue-600 dark:hover:file:bg-blue-700 dark:focus:border-blue-500">
+                                                    
+                                                    @error('reports.' . $index . '.geotagged_photos.' . $date)
+                                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                    @enderror
 
-                                        <!-- Photo Grid -->
-                                        <div
-                                            class="grid grid-cols-2 gap-4 rounded-lg border border-gray-300 bg-gray-50 p-4 dark:border-neutral-600 dark:bg-neutral-800 md:grid-cols-4">
-                                            @foreach ($this->getPaginatedPhotos($index) as $existingPhoto)
-                                                <div wire:click="togglePhotoSelection({{ $index }}, {{ $existingPhoto->id }})"
-                                                    class="group relative cursor-pointer overflow-hidden rounded-lg transition-all {{ in_array($existingPhoto->id, $report['selected_photo_ids'] ?? []) ? 'ring-4 ring-blue-500' : 'hover:ring-2 hover:ring-gray-400' }}">
-                                                    <img src="{{ \Storage::url($existingPhoto->photo_path) }}"
-                                                        class="h-32 w-full object-cover transition-transform group-hover:scale-105"
-                                                        loading="lazy">
-
-                                                    <!-- Selection Indicator -->
-                                                    @if (in_array($existingPhoto->id, $report['selected_photo_ids'] ?? []))
-                                                        <div
-                                                            class="absolute inset-0 flex items-center justify-center bg-blue-600 bg-opacity-40">
-                                                            <svg class="h-12 w-12 text-white" fill="currentColor"
-                                                                viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd"
-                                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                                    clip-rule="evenodd" />
-                                                            </svg>
+                                                    <!-- Photo Preview -->
+                                                    @if (!empty($report['geotagged_photos'][$date]))
+                                                        <div class="mt-3">
+                                                            <img src="{{ $report['geotagged_photos'][$date]->temporaryUrl() }}"
+                                                                class="h-40 w-full rounded-lg object-cover">
                                                         </div>
                                                     @endif
 
-                                                    <!-- Photo Info -->
-                                                    <div
-                                                        class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
-                                                        <p class="text-xs text-white">
-                                                            {{ $existingPhoto->user->name ?? 'Unknown' }}</p>
-                                                        <p class="text-xs text-gray-300">
-                                                            {{ $existingPhoto->created_at->format('M d, Y') }}</p>
+                                                    <div wire:loading wire:target="reports.{{ $index }}.geotagged_photos.{{ $date }}"
+                                                        class="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                                                        Uploading photo...
                                                     </div>
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                            @endif
 
-                                        <!-- Pagination -->
-                                        @if ($this->getTotalPhotoPages($index) > 1)
-                                            <div class="mt-4 flex items-center justify-between">
-                                                <button type="button"
-                                                    wire:click="changePhotoPage({{ $index }}, {{ ($currentPhotoPage[$index] ?? 1) - 1 }})"
-                                                    @if (($currentPhotoPage[$index] ?? 1) <= 1) disabled @endif
-                                                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700">
-                                                    Previous
-                                                </button>
+                                            <!-- Select from Library Mode -->
+                                            @if (isset($photoSelectionMode[$index]) && $photoSelectionMode[$index] === 'select')
+                                                <div>
+                                                    @if (count($existingPhotos) > 0)
+                                                        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                                                            Click on a photo to select it for this date. Only one photo per date.
+                                                        </p>
+                                                
+                                                        <!-- Photo Grid for this specific date -->
+                                                        <div class="grid grid-cols-3 gap-3 md:grid-cols-4">
+                                                            @foreach ($existingPhotos as $existingPhoto)
+                                                                @php
+                                                                    $isSelected = !empty($report['selected_photo_ids'][$date]) && in_array($existingPhoto->id, $report['selected_photo_ids'][$date]);
+                                                                @endphp
+                                                                <div wire:click="togglePhotoSelection({{ $index }}, {{ $existingPhoto->id }}, '{{ $date }}')"
+                                                                    class="group relative cursor-pointer overflow-hidden rounded-lg transition-all {{ $isSelected ? 'ring-4 ring-blue-500' : 'hover:ring-2 hover:ring-gray-400' }}">
+                                                                    <img src="{{ \Storage::url($existingPhoto->photo_path) }}"
+                                                                        class="h-24 w-full object-cover transition-transform group-hover:scale-105"
+                                                                        loading="lazy">
 
-                                                <span class="text-sm text-gray-700 dark:text-gray-300">
-                                                    Page {{ $currentPhotoPage[$index] ?? 1 }} of
-                                                    {{ $this->getTotalPhotoPages($index) }}
-                                                </span>
+                                                                    <!-- Selection Indicator -->
+                                                                    @if ($isSelected)
+                                                                        <div class="absolute inset-0 flex items-center justify-center bg-blue-600 bg-opacity-40">
+                                                                            <svg class="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fill-rule="evenodd"
+                                                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                                                    clip-rule="evenodd" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    @endif
 
-                                                <button type="button"
-                                                    wire:click="changePhotoPage({{ $index }}, {{ ($currentPhotoPage[$index] ?? 1) + 1 }})"
-                                                    @if (($currentPhotoPage[$index] ?? 1) >= $this->getTotalPhotoPages($index)) disabled @endif
-                                                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700">
-                                                    Next
-                                                </button>
-                                            </div>
-                                        @endif
+                                                                    <!-- Photo Info -->
+                                                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-1">
+                                                                        <p class="text-xs text-white truncate">
+                                                                            {{ $existingPhoto->user->name ?? 'Unknown' }}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
 
-                                        <!-- Selected Photos Count -->
-                                        @if (!empty($report['selected_photo_ids']) && count($report['selected_photo_ids']) > 0)
-                                            <p class="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-                                                {{ count($report['selected_photo_ids']) }} photo(s) selected
-                                            </p>
-                                        @endif
-
-                                        @error('reports.' . $index . '.selected_photo_ids')
-                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                        @enderror
-                                    @else
-                                        <div class="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
-                                            <div class="flex">
-                                                <div class="flex-shrink-0">
-                                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20"
-                                                        fill="currentColor">
-                                                        <path fill-rule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                                            clip-rule="evenodd" />
-                                                    </svg>
+                                                        <!-- Selected Photo Info -->
+                                                        @if (!empty($report['selected_photo_ids'][$date]) && count($report['selected_photo_ids'][$date]) > 0)
+                                                            @php
+                                                                $selectedPhotoId = $report['selected_photo_ids'][$date][0];
+                                                                $selectedPhoto = $existingPhotos->firstWhere('id', $selectedPhotoId);
+                                                            @endphp
+                                                            @if ($selectedPhoto)
+                                                                <div class="mt-3 rounded-lg border border-blue-300 bg-blue-50 p-3 dark:border-blue-600 dark:bg-blue-900/20">
+                                                                    <div class="flex items-center gap-3">
+                                                                        <img src="{{ \Storage::url($selectedPhoto->photo_path) }}"
+                                                                            class="h-16 w-16 rounded object-cover">
+                                                                        <div>
+                                                                            <p class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                                                Selected Photo
+                                                                            </p>
+                                                                            <p class="text-xs text-blue-700 dark:text-blue-300">
+                                                                                By {{ $selectedPhoto->user->name ?? 'Unknown' }} on {{ $selectedPhoto->created_at->format('M d, Y') }}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
+                                                        @endif
+                                                    @else
+                                                        <div class="rounded-lg bg-yellow-50 p-3 dark:bg-yellow-900/20">
+                                                            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                                                No photos available. Switch to "Upload New Photos" to add a photo.
+                                                            </p>
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                                <div class="ml-3">
-                                                    <p
-                                                        class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                                                        No photos available in library</p>
-                                                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">No
-                                                        photos have been uploaded yet for this Travel Order ID. Switch
-                                                        to "Upload New Photos" to add photos.</p>
-                                                </div>
-                                            </div>
+                                            @endif
                                         </div>
-                                    @endif
+                                    @endforeach
                                 </div>
-                            @endif
-                        </div>
+                            </div>
+                        @endif
 
                         <!-- Monitoring Report (conditionally shown for Site Specific) -->
                         @if (!empty($report['purpose']) && $report['purpose'] === 'Site Specific')
