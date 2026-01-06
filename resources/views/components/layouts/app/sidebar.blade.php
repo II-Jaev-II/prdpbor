@@ -16,7 +16,7 @@
         @php
             $submittedCount = \App\Models\BackToOfficeReport::query()
                 ->where('user_id', auth()->id())
-                ->where('status', 'Pending')
+                ->whereIn('status', ['Pending', 'For Revision'])
                 ->count();
         @endphp
         

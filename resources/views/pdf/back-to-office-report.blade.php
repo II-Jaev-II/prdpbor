@@ -6,36 +6,46 @@
     <title>Travel Accomplishment Report - {{ $reportNum }}</title>
     <style>
         @page {
-            margin: 80px 50px 100px 50px;
+            margin: 200px 50px 100px 50px;
         }
 
         body {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
+            font-family: 'Cambria', 'Times New Roman', serif;
+            font-size: 13px;
+            line-height: 1;
             color: #000;
             position: relative;
         }
 
+        .page-header {
+            position: fixed;
+            top: -200px;
+            left: 0;
+            right: 0;
+            height: 170px;
+        }
+
         .document-header {
             display: table;
-            width: 100%;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 15px;
-            position: relative;
+            width: auto;
+            margin: 20px auto 0 auto;
         }
 
         .header-wrapper {
             position: relative;
         }
 
-        .logo-section {
+        .logo-cell {
             display: table-cell;
             width: 120px;
             vertical-align: middle;
             text-align: center;
-            padding-right: 15px;
+            padding: 0;
+        }
+
+        .logo-cell img {
+            width: 150px;
+            height: auto;
         }
 
         .logo-placeholder {
@@ -46,41 +56,55 @@
             text-align: center;
             line-height: 100px;
             color: #666;
-            font-size: 9px;
+            font-size: 13px;
         }
 
         .header-info {
             display: table-cell;
             vertical-align: middle;
-            text-align: center;
+            text-align: left;
             font-family: 'Bookman Old Style', serif;
+            padding-left: 10px;
         }
 
         .header-info p {
-            margin: 2px 0;
-            font-size: 12px;
+            margin: 0;
+            line-height: 1;
+            font-size: 13px;
         }
 
         .header-main {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 13px;
         }
 
         .employee-info {
             margin: 20px 0;
-            font-size: 11px;
+            font-size: 13px;
+            color: rgb(68, 114, 196);
         }
 
         .employee-info p {
             margin: 3px 0;
         }
 
+        .employee-info .label {
+            display: inline-block;
+            width: 80px;
+        }
+
+        .employee-info .value {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
         .report-title {
             text-align: center;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
-            text-decoration: underline;
-            margin: 20px 0;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: rgb(68, 114, 196);
         }
 
         .accomplishment-table {
@@ -94,7 +118,7 @@
             padding: 8px;
             background-color: #f0f0f0;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
             text-align: center;
         }
 
@@ -102,7 +126,7 @@
             border: 1px solid #000;
             padding: 8px;
             vertical-align: top;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .date-column {
@@ -127,13 +151,15 @@
         }
 
         .travel-order-info {
-            font-size: 10px;
+            font-size: 13px;
             color: #333;
             margin-bottom: 5px;
         }
 
         .photos-grid {
             margin: 20px 0;
+            width: 100%;
+            padding-top: 15px;
         }
 
         .photo-item {
@@ -142,7 +168,15 @@
             page-break-inside: avoid;
             position: relative;
             margin-bottom: 15px;
-            max-width: 100%;
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 2%;
+            box-sizing: border-box;
+        }
+
+        .photo-item:nth-child(2n) {
+            margin-right: 0;
         }
 
         .photo-item img {
@@ -184,27 +218,30 @@
         }
 
         .signature-label {
-            font-size: 10px;
+            font-size: 13px;
             margin-bottom: 40px;
         }
 
         .signature-name {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
             text-decoration: underline;
             position: relative;
+            margin-bottom: 2px;
         }
 
         .signature-title {
-            font-size: 10px;
+            font-size: 13px;
+            font-style: italic;
+            margin-top: 2px;
         }
 
         .e-signature-image {
             position: absolute;
             left: 50%;
-            top: -20px;
+            top: -50px;
             transform: translateX(-50%);
-            max-width: 150px;
+            max-width: 250px;
             height: auto;
             z-index: 10;
         }
@@ -214,9 +251,8 @@
         }
 
         .report-separator {
-            margin: 30px 0;
-            border-top: 2px solid #000;
-            page-break-after: always;
+            margin: 5px 0px;
+            border-bottom: 2px solid #000;
         }
 
         .qr-code-container {
@@ -235,18 +271,17 @@
         }
 
         .qr-code-container p {
-            font-size: 7px;
+            font-size: 13px;
             margin: 3px 0 0 0;
             word-wrap: break-word;
         }
 
         .logo-container {
             position: absolute;
-            top: -40px;
-            left: 0;
+            top: 10px;
+            left: 150px;
             width: 140px;
             padding: 5px;
-            background: white;
             text-align: center;
         }
 
@@ -254,106 +289,126 @@
             width: 100%;
             height: auto;
         }
+
+        .qr-code-container {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            width: 80px;
+            padding: 5px;
+            background: white;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
-    <div class="header-wrapper">
-        <div class="logo-container">
-            <img src="{{ public_path('prdp-logo.png') }}" alt="PRDP Logo">
-        </div>
-
-        @if ($approvalId && $qrCode)
+    <div class="page-header">
+        <div class="header-wrapper">
+            @if ($approvalId && $qrCode)
             <div class="qr-code-container">
                 <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code">
             </div>
-        @endif
-    </div>
-
-    <div class="document-header">
-        <div class="header-info">
-            <p style="font-size: 12px;">Republic of the Philippines</p>
-            <p class="header-main">DEPARTMENT OF AGRICULTURE RFO 1</p>
-            <p class="header-main">Regional Project Coordination Office 1</p>
-            <p style="font-size: 12px;">San Fernando City, La Union</p>
+            @endif
         </div>
+
+        <div class="document-header">
+            <div class="logo-cell">
+                <img src="{{ public_path('prdp-logo.png') }}" alt="PRDP Logo">
+            </div>
+            <div class="header-info">
+                <p style="font-size: 12px;">Republic of the Philippines</p>
+                <p class="header-main">Department of Agriculture</p>
+                <p class="header-main">Philippine Rural Development Project</p>
+                <p class="header-main">Regional Project Coordination Office 1</p>
+                <p style="font-size: 12px;">City of San Fernando, La Union</p>
+            </div>
+        </div>
+
+        <div class="report-title">TRAVEL ACCOMPLISHMENT REPORT</div>
+        <div class="report-separator"></div>
     </div>
 
     <div class="employee-info">
-        <p><strong>Name: {{ strtoupper($reports->first()->user->name ?? 'UNKNOWN') }}</strong></p>
-        <p><strong>Division: PHILIPPINE RURAL DEVELOPMENT PROJECT (GEOMAPPING AND GOVERNANCE UNIT)</strong></p>
+        <p><span class="label">Name:</span><span class="value"><strong>{{ $reports->first()->user->name ?? 'UNKNOWN' }}</strong></span></p>
+        <p><span class="label">Position:</span><span class="value"><strong>{{ $reports->first()->user->designation ?? 'UNKNOWN' }}</strong></span></p>
+        <p><span class="label">Division:</span><span class="value"><strong>Philippine Rural Development Project ({{ $reports->first()->user->unit_component ?? 'UNKNOWN' }})</strong></span></p>
     </div>
-
-    <div class="report-title">TRAVEL ACCOMPLISHMENT REPORT</div>
 
     <table class="accomplishment-table">
         <thead>
             <tr>
                 <th class="date-column">Date</th>
-                <th class="place-column">Particulars/Place</th>
-                <th class="accomplishment-column">Accomplishments/Highlight of the Activity</th>
+                <th class="place-column">Location</th>
+                <th class="accomplishment-column">Accomplishments or Highlights of the Activity</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($reports as $index => $report)
-                <tr>
-                    <td class="date-column">
-                        {{ $report->start_date ? $report->start_date->format('F j, Y') : 'N/A' }}
-                        @if ($report->end_date && !$report->start_date->isSameDay($report->end_date))
-                            <br>to<br>
-                            {{ $report->end_date->format('F j, Y') }}
-                        @endif
-                    </td>
-                    <td class="place-column">
-                        <strong>{{ $report->place }}</strong>
-                    </td>
-                    <td class="accomplishment-column">
-                        <div class="accomplishment-text">
-                            {{ $report->accomplishment }}
-                        </div>
-                    </td>
-                </tr>
+            <tr>
+                <td class="date-column">
+                    {{ $report->start_date ? $report->start_date->format('j F, Y') : 'N/A' }}
+                    @if ($report->end_date && !$report->start_date->isSameDay($report->end_date))
+                    <br>to<br>
+                    {{ $report->end_date->format('j F, Y') }}
+                    @endif
+                </td>
+                <td class="place-column">
+                    <strong>{{ $report->place }}</strong>
+                </td>
+                <td class="accomplishment-column">
+                    <div class="accomplishment-text">
+                        {{ $report->accomplishment }}
+                    </div>
+                </td>
+            </tr>
             @endforeach
         </tbody>
     </table>
 
     {{-- Photos Section - Display all photos from all reports --}}
     @php
-        $allPhotos = [];
-        foreach ($reports as $report) {
-            if (!empty($report->photos) && count($report->photos) > 0) {
-                $allPhotos = array_merge($allPhotos, $report->photos);
-            }
-        }
+    $allPhotos = [];
+    foreach ($reports as $report) {
+    if (!empty($report->photos) && count($report->photos) > 0) {
+    $allPhotos = array_merge($allPhotos, $report->photos);
+    }
+    }
     @endphp
 
     @if (count($allPhotos) > 0)
-        <div class="photos-grid">
-            @foreach ($allPhotos as $photo)
-                <div class="photo-item">
-                    <img src="{{ public_path('storage/' . $photo) }}" alt="Report photo">
-                </div>
-            @endforeach
+    <div class="photos-grid">
+        @foreach ($allPhotos as $photo)
+        <div class="photo-item">
+            <img src="{{ public_path('storage/' . $photo) }}" alt="Report photo">
         </div>
+        @endforeach
+    </div>
     @endif
 
     <div class="signature-section">
         <div class="signature-row">
             <div class="signature-cell">
                 <p class="signature-label">Prepared by:</p>
-                <p class="signature-name">{{ strtoupper($reports->first()->user->name ?? 'UNKNOWN') }}</p>
-                <p class="signature-title">ADMINISTRATIVE OFFICER II</p>
+                <p class="signature-name">
+                    @if ($reports->first()->user && $reports->first()->user->e_signature)
+                    <img src="{{ public_path('storage/' . $reports->first()->user->e_signature) }}" alt="Signature"
+                        class="e-signature-image">
+                    @endif
+                    {{ strtoupper($reports->first()->user->name ?? 'UNKNOWN') }}
+                </p>
+                <p class="signature-title">{{ $reports->first()->user->designation ?? 'UNKNOWN' }}</p>
             </div>
             <div class="signature-cell">
                 <p class="signature-label">Noted by:</p>
                 <p class="signature-name">
                     @if ($reports->first()->approver && $reports->first()->approver->e_signature)
-                        <img src="{{ public_path('storage/' . $reports->first()->approver->e_signature) }}" alt="Signature"
-                            class="e-signature-image">
+                    <img src="{{ public_path('storage/' . $reports->first()->approver->e_signature) }}" alt="Signature"
+                        class="e-signature-image">
                     @endif
-                    {{ strtoupper($reports->first()->approver->name ?? 'DEO G. RIVERA') }}
+                    {{ strtoupper($reports->first()->approver->name ?? 'UNKNOWN') }}
                 </p>
-                <p class="signature-title">I-SUPPORT COMPONENT HEAD</p>
+                <p class="signature-title">{{ $reports->first()->approver->designation ?? 'UNKNOWN' }}</p>
             </div>
         </div>
     </div>

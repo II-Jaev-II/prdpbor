@@ -15,10 +15,13 @@ class PendingReports extends Component
 {
     use WithFileUploads;
 
+    public bool $showViewModal = false;
     public bool $showEditModal = false;
+    public string $currentReportNum = '';
     public ?int $editingId = null;
     public ?string $superiorRemarks = null;
     public ?string $returnedAt = null;
+    public $reports = [];
     public array $editForm = [
         'travel_order_id' => '',
         'activity_name' => '',
@@ -38,7 +41,72 @@ class PendingReports extends Component
     public array $photosToDelete = [];
     public ?string $monitoringReportToDelete = null;
 
-    protected $listeners = ['editReport', 'deleteReport'];
+    protected $listeners = ['viewReports', 'deleteReports'];
+
+    public function viewReports($reportNum): void
+    {
+        $this->currentReportNum = $reportNum;
+
+        // Get all reports with this report number for the current user
+        $this->reports = BackToOfficeReport::query()
+            ->where('report_num', $reportNum)
+            ->where('user_id', Auth::id())
+            ->with(['user', 'enrollActivity'])
+            ->get();
+
+        $this->showViewModal = true;
+    }
+
+    public function openEditModal($reportId): void
+    {
+        $report = BackToOfficeReport::with('enrollActivity')->find($reportId);
+
+        if ($report && $report->user_id === Auth::id()) {
+            $this->editingId = $report->id;
+
+            // Format date range for display
+            $dateRange = '';
+            if ($report->start_date && $report->end_date) {
+                if ($report->start_date->eq($report->end_date)) {
+                    $dateRange = $report->start_date->format('Y-m-d');
+                } else {
+                    $dateRange = $report->start_date->format('Y-m-d') . ' to ' . $report->end_date->format('Y-m-d');
+                }
+            }
+
+            // Get activity details from enrolled activity
+            $activityName = '';
+            $purposeType = '';
+            $subprojectName = '';
+            if ($report->enrollActivity) {
+                $activityName = $report->enrollActivity->activity_name ?? '';
+                $purposeType = $report->enrollActivity->purpose_type ?? '';
+                $subprojectName = $report->enrollActivity->subproject_name ?? '';
+            }
+
+            $this->editForm = [
+                'travel_order_id' => $report->travel_order_id ?? '',
+                'activity_name' => $activityName,
+                'date_of_travel' => $dateRange,
+                'start_date' => $report->start_date?->format('Y-m-d') ?? '',
+                'end_date' => $report->end_date?->format('Y-m-d') ?? '',
+                'purpose' => $report->purpose ?? '',
+                'purpose_type' => $purposeType,
+                'subproject_name' => $subprojectName,
+                'place' => $report->place ?? '',
+                'accomplishment' => $report->accomplishment ?? '',
+                'monitoring_report' => $report->monitoring_report ?? null,
+            ];
+            $this->existingPhotos = $report->photos ?? [];
+            $this->newPhotos = [];
+            $this->newMonitoringReport = null;
+            $this->photosToDelete = [];
+            $this->monitoringReportToDelete = null;
+            $this->superiorRemarks = $report->superior_remarks;
+            $this->returnedAt = $report->returned_at;
+            $this->showEditModal = true;
+        }
+    }
 
     public function editReport($rowId): void
     {
@@ -229,11 +297,56 @@ class PendingReports extends Component
                 'returned_at' => null, // Clear return date
             ]);
 
+            // Reset ALL reports with the same report_num to Pending status
+            BackToOfficeReport::where('report_num', $report->report_num)
+                ->where('user_id', Auth::id())
+                ->where('id', '!=', $report->id)
+                ->update([
+                    'status' => 'Pending',
+                    'superior_remarks' => null,
+                    'returned_at' => null,
+                ]);
+
             $this->closeModal();
+            $this->closeViewModal();
             $this->dispatch('pg:eventRefresh-pendingTable');
 
-            session()->flash('success', 'Report updated successfully!');
+            session()->flash('success', 'All reports updated successfully!');
         }
+    }
+
+    public function deleteReports($reportNum): void
+    {
+        // Delete all reports with this report_num for the current user
+        $reports = BackToOfficeReport::where('report_num', $reportNum)
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['Pending', 'For Revision'])
+            ->get();
+
+        foreach ($reports as $report) {
+            // Delete photos from storage
+            if (!empty($report->photos)) {
+                foreach ($report->photos as $photoPath) {
+                    Storage::disk('public')->delete($photoPath);
+
+                    // Also remove from geotag_photos table
+                    GeotagPhoto::where('user_id', Auth::id())
+                        ->where('photo_path', $photoPath)
+                        ->delete();
+                }
+            }
+
+            // Delete monitoring report from storage
+            if (!empty($report->monitoring_report)) {
+                Storage::disk('public')->delete($report->monitoring_report);
+            }
+
+            // Delete the report
+            $report->delete();
+        }
+
+        $this->dispatch('pg:eventRefresh-pendingTable');
+        session()->flash('success', 'All reports deleted successfully!');
     }
 
     public function deleteReport($rowId): void
@@ -259,6 +372,13 @@ class PendingReports extends Component
             $this->dispatch('pg:eventRefresh-pendingTable');
             session()->flash('success', 'Report deleted successfully!');
         }
+    }
+
+    public function closeViewModal(): void
+    {
+        $this->showViewModal = false;
+        $this->currentReportNum = '';
+        $this->reports = [];
     }
 
     public function closeModal(): void
