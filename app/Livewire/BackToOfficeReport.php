@@ -21,6 +21,7 @@ class BackToOfficeReport extends Component
     public $reports = [];
     public $tracking_code = '';
     public $loadAttempted = false;
+    public $userActivities = [];
     public $existingPhotos;
     public $photoSelectionMode = []; // 'upload' or 'select' per report index
     public $photoSearchTerm = [];
@@ -32,7 +33,33 @@ class BackToOfficeReport extends Component
     {
         // Initialize with one report form
         $this->existingPhotos = collect([]);
+        $this->loadUserActivities();
         $this->addReport();
+    }
+
+    public function loadUserActivities()
+    {
+        // Get current user's name
+        $userName = Auth::user()->name;
+        
+        // Find all enrolled activities where user's name appears
+        $this->userActivities = EnrollActivity::whereRaw(
+            'LOWER(employee_name) LIKE ?', 
+            ['%"' . strtolower($userName) . '"%']
+        )
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function($activity) {
+            return [
+                'id' => $activity->id,
+                'to_num' => $activity->to_num,
+                'activity_name' => $activity->activity_name,
+                'start_date' => $activity->start_date,
+                'end_date' => $activity->end_date,
+                'employee_names' => $activity->employee_name ?? [],
+            ];
+        })
+        ->toArray();
     }
 
     public function loadActivities()
@@ -95,6 +122,9 @@ class BackToOfficeReport extends Component
             }
             
             $this->reports[] = [
+                'enrolled_activity_id' => $activity->id,
+                'tracking_code' => $activity->to_num,
+                'employee_names' => $activity->employee_name ?? [],
                 'activity_name' => $activity->activity_name,
                 'date_of_travel' => $dateOfTravel,
                 'travel_dates' => $travelDates,
@@ -436,18 +466,24 @@ class BackToOfficeReport extends Component
                 $endDate = $startDate;
             }
 
-            // Find the matching enrolled activity
-            $enrolledActivity = EnrollActivity::where('to_num', $this->tracking_code)
-                ->where('activity_name', $report['activity_name'])
-                ->where('purpose', $report['purpose'])
-                ->first();
+            // Find the matching enrolled activity (fallback if enrolled_activity_id not in report)
+            $enrolledActivityId = $report['enrolled_activity_id'] ?? null;
+            
+            if (!$enrolledActivityId) {
+                // Fallback: try to find by tracking code and activity name
+                $enrolledActivity = EnrollActivity::where('to_num', $this->tracking_code)
+                    ->where('activity_name', $report['activity_name'])
+                    ->where('purpose', $report['purpose'])
+                    ->first();
+                $enrolledActivityId = $enrolledActivity ? $enrolledActivity->id : null;
+            }
 
             // Save to database
             BackToOfficeReportModel::create([
                 'user_id' => Auth::id(),
                 'report_num' => $reportNum,
-                'travel_order_id' => $this->tracking_code,
-                'enrolled_activity_id' => $enrolledActivity ? $enrolledActivity->id : null,
+                'travel_order_id' => $report['tracking_code'] ?? $this->tracking_code,
+                'enrolled_activity_id' => $enrolledActivityId,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'purpose' => $report['purpose'],
@@ -460,10 +496,11 @@ class BackToOfficeReport extends Component
 
             // Store only newly uploaded photos in geotag_photos table (not selected ones)
             if (!empty($newlyUploadedPaths)) {
+                $trackingCodeToUse = $report['tracking_code'] ?? $this->tracking_code;
                 foreach ($newlyUploadedPaths as $path) {
                     GeotagPhoto::create([
                         'user_id' => Auth::id(),
-                        'travel_order_id' => $this->tracking_code,
+                        'travel_order_id' => $trackingCodeToUse,
                         'photo_path' => $path,
                     ]);
                 }

@@ -116,33 +116,39 @@
                                             {{-- Photo Info Overlay --}}
                                             <div
                                                 class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <div class="flex items-center justify-between text-white text-xs">
-                                                    <div class="flex items-center gap-1">
-                                                        <flux:icon.user class="w-3 h-3" />
-                                                        <span class="truncate">{{ $photo->user->name }}</span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1">
-                                                        <button wire:click="downloadPhoto({{ $photo->id }})"
-                                                            class="p-1 hover:bg-blue-600 rounded transition-colors">
-                                                            <svg class="w-4 h-4" fill="currentColor"
-                                                                viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd"
-                                                                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                                                    clip-rule="evenodd" />
-                                                            </svg>
-                                                        </button>
-                                                        @if ($photo->user_id === auth()->id())
-                                                            <button wire:click="deletePhoto({{ $photo->id }})"
-                                                                wire:confirm="Are you sure you want to delete this photo?"
-                                                                class="p-1 hover:bg-red-600 rounded transition-colors">
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center justify-between text-white text-xs">
+                                                        <div class="flex items-center gap-1">
+                                                            <flux:icon.user class="w-3 h-3" />
+                                                            <span class="truncate">{{ $photo->user->name }}</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            <button wire:click="downloadPhoto({{ $photo->id }})"
+                                                                class="p-1 hover:bg-blue-600 rounded transition-colors">
                                                                 <svg class="w-4 h-4" fill="currentColor"
                                                                     viewBox="0 0 20 20">
                                                                     <path fill-rule="evenodd"
-                                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
                                                                         clip-rule="evenodd" />
                                                                 </svg>
                                                             </button>
-                                                        @endif
+                                                            @if ($photo->user_id === auth()->id())
+                                                                <button wire:click="deletePhoto({{ $photo->id }})"
+                                                                    wire:confirm="Are you sure you want to delete this photo?"
+                                                                    class="p-1 hover:bg-red-600 rounded transition-colors">
+                                                                    <svg class="w-4 h-4" fill="currentColor"
+                                                                        viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd"
+                                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                                            clip-rule="evenodd" />
+                                                                    </svg>
+                                                                </button>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center gap-1 text-white text-xs">
+                                                        <flux:icon.calendar class="w-3 h-3" />
+                                                        <span>{{ $photo->created_at->format('M d, Y') }}</span>
                                                     </div>
                                                 </div>
                                             </div>

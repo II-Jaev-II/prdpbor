@@ -5,16 +5,21 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\EnrollActivity as EnrollActivityModel;
 use App\Models\SubprojectList;
+use App\Models\User;
 
 class EnrollActivity extends Component
 {
     public $activities = [];
     public $subprojects = [];
+    public $users = [];
 
     public function mount()
     {
         // Fetch all subprojects
         $this->subprojects = SubprojectList::all();
+        
+        // Fetch all registered users
+        $this->users = User::orderBy('name', 'asc')->get(['id', 'name']);
 
         // Initialize with one empty activity
         $this->addActivity();
@@ -109,6 +114,7 @@ class EnrollActivity extends Component
             $data = [
                 'to_num' => $activity['to_num'],
                 'activity_name' => $activity['activity_name'],
+                'employee_name' => $activity['employee_name'] ?? [],
                 'unit_component' => $activity['unit_component'],
                 'purpose' => $activity['purpose'],
                 'purpose_type' => $activity['purpose_type'],

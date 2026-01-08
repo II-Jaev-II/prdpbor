@@ -156,6 +156,100 @@
                         @enderror
                     </div>
 
+                    <!-- Employee Names -->
+                    <div>
+                        <label for="employee_name_input_{{ $index }}"
+                            class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            Employee Names (Optional)
+                        </label>
+                        <div x-data="{
+                            employeeNames: $wire.entangle('activities.{{ $index }}.employee_name'),
+                            inputValue: '',
+                            showDropdown: false,
+                            registeredUsers: @js($users),
+                            get filteredUsers() {
+                                if (!this.inputValue) return this.registeredUsers;
+                                const query = this.inputValue.toLowerCase();
+                                return this.registeredUsers.filter(user => 
+                                    user.name.toLowerCase().includes(query)
+                                );
+                            },
+                            addName(name = null) {
+                                const nameToAdd = name || this.inputValue.trim();
+                                if (nameToAdd) {
+                                    if (!Array.isArray(this.employeeNames)) {
+                                        this.employeeNames = [];
+                                    }
+                                    // Avoid duplicates
+                                    if (!this.employeeNames.includes(nameToAdd)) {
+                                        this.employeeNames.push(nameToAdd);
+                                    }
+                                    this.inputValue = '';
+                                    this.showDropdown = false;
+                                }
+                            },
+                            selectUser(userName) {
+                                this.addName(userName);
+                            },
+                            removeName(index) {
+                                this.employeeNames.splice(index, 1);
+                            }
+                        }" @click.away="showDropdown = false">
+                            <!-- Display current names as tags -->
+                            <div class="flex flex-wrap gap-2 mb-2" x-show="employeeNames && employeeNames.length > 0">
+                                <template x-for="(name, idx) in employeeNames" :key="idx">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                        <span x-text="name"></span>
+                                        <button type="button" @click="removeName(idx)" class="hover:text-blue-600 dark:hover:text-blue-200">
+                                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </button>
+                                    </span>
+                                </template>
+                            </div>
+                            
+                            <!-- Input to add new names with dropdown -->
+                            <div class="relative">
+                                <div class="flex gap-2">
+                                    <input type="text" id="employee_name_input_{{ $index }}"
+                                        x-model="inputValue"
+                                        @focus="showDropdown = true"
+                                        @input="showDropdown = true"
+                                        @keydown.enter.prevent="addName()"
+                                        @keydown.arrow-down.prevent="$refs.dropdown?.querySelector('div')?.focus()"
+                                        autocomplete="off"
+                                        placeholder="Type to search or select from registered users..."
+                                        class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                                    <button type="button" @click="addName()"
+                                        class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700">
+                                        Add
+                                    </button>
+                                </div>
+                                
+                                <!-- Dropdown of registered users -->
+                                <div x-show="showDropdown && filteredUsers.length > 0" x-ref="dropdown" x-transition
+                                    class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-neutral-600 dark:bg-neutral-800">
+                                    <template x-for="user in filteredUsers" :key="user.id">
+                                        <div @click="selectUser(user.name)"
+                                            class="cursor-pointer px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-neutral-700">
+                                            <div class="flex items-center">
+                                                <svg class="h-5 w-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                                </svg>
+                                                <span class="font-medium text-gray-900 dark:text-white" x-text="user.name"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                Select from registered users or type a custom name. This helps in searching when creating Back to Office Reports.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Component -->
                     <div>
                         <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">

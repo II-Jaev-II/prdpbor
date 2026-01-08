@@ -21,15 +21,31 @@
     @endif
 
     <form wire:submit="submit" class="space-y-6">
-        <!-- Travel Order ID -->
+        <!-- Search Section -->
         <div class="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
-            <label for="tracking_code" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Travel Order ID <span class="text-red-500">*</span>
-            </label>
-            <div class="flex gap-2" x-data="{
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Search for Your Activities</h3>
+            
+            <!-- Travel Order ID with Dropdown -->
+            <div x-data="{
+                showDropdown: false,
+                searchQuery: $wire.entangle('tracking_code'),
+                userActivities: @js($userActivities),
+                get filteredActivities() {
+                    if (!this.searchQuery) return this.userActivities;
+                    const query = this.searchQuery.toLowerCase();
+                    return this.userActivities.filter(activity => 
+                        activity.to_num.toLowerCase().includes(query) ||
+                        activity.activity_name.toLowerCase().includes(query) ||
+                        activity.employee_names.some(name => name.toLowerCase().includes(query))
+                    );
+                },
+                selectActivity(toNum) {
+                    this.searchQuery = toNum;
+                    this.showDropdown = false;
+                    $wire.call('loadActivities');
+                },
                 async viewPdf(trackingCode) {
                     if (!trackingCode) return;
-            
                     try {
                         const pdfUrl = 'https://172.16.3.7/api/proxy/tracking/pdf/' + trackingCode;
                         const response = await fetch(pdfUrl);
@@ -41,32 +57,114 @@
                         alert('Failed to load PDF');
                     }
                 }
-            }">
-                <input type="text" id="tracking_code" wire:model="tracking_code" placeholder="Enter Travel Order ID"
-                    class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
-                <button type="button" wire:click="loadActivities" :disabled="!$wire.tracking_code"
-                    class="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-600 dark:hover:bg-green-700"
-                    x-data :disabled="!$wire.tracking_code">
-                    Load Activities
-                </button>
-                <button type="button" @click="viewPdf($wire.tracking_code)" :disabled="!$wire.tracking_code"
-                    class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700"
-                    x-data :disabled="!$wire.tracking_code">
-                    View PDF
-                </button>
+            }" @click.away="showDropdown = false" class="relative">
+                <label for="tracking_code" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Travel Order ID
+                </label>
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <input type="text" id="tracking_code" 
+                            x-model="searchQuery"
+                            @focus="showDropdown = true"
+                            @input="showDropdown = true"
+                            autocomplete="off"
+                            placeholder="Click to see your enrolled activities or type to search..."
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
+                        
+                        <!-- Dropdown -->
+                        <div x-show="showDropdown" x-transition
+                            class="absolute z-10 mt-1 max-h-80 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-neutral-600 dark:bg-neutral-800">
+                            <template x-if="filteredActivities.length === 0">
+                                <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                    No enrolled activities found for you
+                                </div>
+                            </template>
+                            <template x-for="activity in filteredActivities" :key="activity.id">
+                                <div @click="selectActivity(activity.to_num)"
+                                    class="cursor-pointer border-b border-gray-100 px-4 py-3 hover:bg-blue-50 dark:border-neutral-700 dark:hover:bg-neutral-700">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-medium text-gray-900 dark:text-white" x-text="activity.to_num"></span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400" 
+                                            x-text="new Date(activity.start_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
+                                    </div>
+                                    <div class="text-sm text-gray-700 dark:text-gray-300 mb-1" x-text="activity.activity_name"></div>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="name in activity.employee_names" :key="name">
+                                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" x-text="name"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="loadActivities" :disabled="!searchQuery"
+                        class="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-600 dark:hover:bg-green-700">
+                        Load
+                    </button>
+                    <button type="button" @click="viewPdf(searchQuery)" :disabled="!searchQuery"
+                        class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700">
+                        View PDF
+                    </button>
+                </div>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Select from your enrolled activities or enter a Travel Order ID manually
+                </p>
             </div>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter the Travel Order ID used when enrolling
-                activities</p>
         </div>
 
-        @if (!empty($tracking_code) && count($reports) > 0)
+        @if ($loadAttempted && count($reports) === 0)
+            <div class="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            No enrolled activities found matching your search criteria.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (count($reports) > 0)
+
             @foreach ($reports as $index => $report)
                 <div
                     class="relative overflow-hidden rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-900">
                     <div class="mb-4 flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            Report #{{ $index + 1 }}
-                        </h2>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    Report #{{ $index + 1 }}
+                                </h2>
+                                @if (!empty($report['tracking_code']))
+                                    <span class="inline-flex items-center rounded-md bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                        <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        TO: {{ $report['tracking_code'] }}
+                                    </span>
+                                @endif
+                            </div>
+                            @if (!empty($report['employee_names']) && count($report['employee_names']) > 0)
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 mr-1">Travelers:</span>
+                                    @foreach ($report['employee_names'] as $empName)
+                                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                            </svg>
+                                            {{ $empName }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                         @if (count($reports) > 1)
                             <button type="button" wire:click="removeReport({{ $index }})"
                                 class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-600 dark:bg-neutral-800 dark:text-red-400 dark:hover:bg-neutral-700">
