@@ -64,7 +64,7 @@
                             async fetchTrackingCodes() {
                                 try {
                                     this.loading = true;
-                                    const response = await fetch('https://172.16.3.7/api/proxy/tracking/all');
+                                    const response = await fetch('https://ilocosdts.local/api/proxy/tracking/all');
                                     const data = await response.json();
                                     this.trackingCodes = Array.isArray(data) ? data : [data];
                                     this.loading = false;
@@ -91,7 +91,7 @@
                                 if (!trackingCode) return;
                         
                                 try {
-                                    const pdfUrl = 'https://172.16.3.7/api/proxy/tracking/pdf/' + trackingCode;
+                                    const pdfUrl = 'https://ilocosdts.local/api/proxy/tracking/pdf/' + trackingCode;
                                     const response = await fetch(pdfUrl);
                                     const blob = await response.blob();
                                     const url = URL.createObjectURL(blob);
@@ -108,6 +108,7 @@
                                         @focus="showDropdown = true"
                                         @input="showDropdown = true; $wire.set('activities.{{ $index }}.to_num', $event.target.value)"
                                         :disabled="loading"
+                                        autocomplete="off"
                                         placeholder="Search tracking code, destination, or employee name..."
                                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500">
 

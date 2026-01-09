@@ -31,10 +31,9 @@ class BackToOfficeReport extends Component
 
     public function mount()
     {
-        // Initialize with one report form
+        // Initialize with empty reports
         $this->existingPhotos = collect([]);
         $this->loadUserActivities();
-        $this->addReport();
     }
 
     public function loadUserActivities()
@@ -68,7 +67,6 @@ class BackToOfficeReport extends Component
 
         if (empty($this->tracking_code)) {
             $this->reports = [];
-            $this->addReport();
             return;
         }
 
