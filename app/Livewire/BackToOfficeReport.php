@@ -42,23 +42,40 @@ class BackToOfficeReport extends Component
         $userName = Auth::user()->name;
         
         // Find all enrolled activities where user's name appears
-        $this->userActivities = EnrollActivity::whereRaw(
-            'LOWER(employee_name) LIKE ?', 
-            ['%"' . strtolower($userName) . '"%']
-        )
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->map(function($activity) {
-            return [
-                'id' => $activity->id,
-                'to_num' => $activity->to_num,
-                'activity_name' => $activity->activity_name,
-                'start_date' => $activity->start_date,
-                'end_date' => $activity->end_date,
-                'employee_names' => $activity->employee_name ?? [],
-            ];
-        })
-        ->toArray();
+        // Split the user's name into parts for flexible matching (e.g., "Christian Jave Tejano" -> search for "Christian", "Jave", "Tejano")
+        $nameParts = array_filter(explode(' ', $userName), function($part) {
+            // Filter out middle initials and short words (like "V.")
+            return strlen($part) > 2 && !preg_match('/^[A-Z]\.$/', $part);
+        });
+        
+        $activities = EnrollActivity::query();
+        
+        // Build OR conditions for each name part
+        if (count($nameParts) > 0) {
+            $activities->where(function($query) use ($nameParts) {
+                foreach ($nameParts as $part) {
+                    $query->orWhereRaw('LOWER(employee_name) LIKE ?', ['%' . strtolower($part) . '%']);
+                }
+            });
+        } else {
+            // Fallback to full name if no valid parts
+            $activities->whereRaw('LOWER(employee_name) LIKE ?', ['%' . strtolower($userName) . '%']);
+        }
+        
+        $this->userActivities = $activities
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($activity) {
+                return [
+                    'id' => $activity->id,
+                    'to_num' => $activity->to_num,
+                    'activity_name' => $activity->activity_name,
+                    'start_date' => $activity->start_date,
+                    'end_date' => $activity->end_date,
+                    'employee_names' => $activity->employee_name ?? [],
+                ];
+            })
+            ->toArray();
     }
 
     public function loadActivities()
