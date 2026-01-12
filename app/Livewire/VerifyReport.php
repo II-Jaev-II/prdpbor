@@ -15,36 +15,19 @@ use BaconQrCode\Writer;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
-class ApprovedReports extends Component
+class VerifyReport extends Component
 {
-    public bool $showViewModal = false;
-    public string $currentReportNum = '';
-    public $reports = [];
+    protected $listeners = ['generateVerifyReport'];
 
-    protected $listeners = ['viewReports'];
-
-    public function viewReports($reportNum): void
+    public function generateVerifyReport($reportNum)
     {
-        $this->currentReportNum = $reportNum;
-
-        // Get all reports with this report number for the authenticated user
-        $this->reports = BackToOfficeReport::query()
-            ->where('report_num', $reportNum)
-            ->where('user_id', Auth::id())
-            ->where('status', 'Approved')
-            ->with(['user', 'enrollActivity', 'approver'])
-            ->get();
-
-        $this->showViewModal = true;
-    }
-
-    public function generateReport()
-    {
-        // Get all approved reports with this report number
+        // Get all approved reports with this report number for the superior's unit
         $reports = BackToOfficeReport::query()
-            ->where('report_num', $this->currentReportNum)
-            ->where('user_id', Auth::id())
+            ->where('report_num', $reportNum)
             ->where('status', 'Approved')
+            ->whereHas('user', function ($query) {
+                $query->where('unit_component', Auth::user()->superior_role);
+            })
             ->with(['user', 'enrollActivity', 'approver'])
             ->get();
 
@@ -96,7 +79,7 @@ class ApprovedReports extends Component
         // Generate PDF
         $pdf = Pdf::loadView('pdf.back-to-office-report', [
             'reports' => $reports,
-            'reportNum' => $this->currentReportNum,
+            'reportNum' => $reportNum,
             'approvalId' => $approvalId,
             'qrCode' => $qrCode,
             'optimizedPhotos' => $optimizedPhotos,
@@ -108,49 +91,47 @@ class ApprovedReports extends Component
         }, 'Report_for_' . $firstReport->travel_order_id . '.pdf');
     }
 
-    public function closeModal(): void
-    {
-        $this->showViewModal = false;
-        $this->currentReportNum = '';
-        $this->reports = [];
-    }
-
     /**
      * Optimize photos for PDF embedding - resize and compress for faster generation
      */
     private function optimizePhotosForPdf($reports): array
     {
         $optimizedPhotos = [];
-        $manager = new ImageManager(new Driver());
 
         foreach ($reports as $report) {
-            if (!empty($report->photos) && is_array($report->photos)) {
+            $reportPhotos = [];
+
+            if ($report->photos && is_array($report->photos)) {
+                $manager = new ImageManager(new Driver());
+
                 foreach ($report->photos as $photoPath) {
-                    try {
-                        $fullPath = storage_path('app/public/' . $photoPath);
+                    if (Storage::exists($photoPath)) {
+                        try {
+                            // Read and optimize the image
+                            $image = $manager->read(Storage::path($photoPath));
 
-                        if (!file_exists($fullPath)) {
-                            continue;
+                            // Resize to max 600px width (good balance of quality and file size)
+                            $image->scale(width: 600);
+
+                            // Convert to JPEG with 80% quality
+                            $encodedImage = $image->toJpeg(quality: 80);
+
+                            // Convert to base64
+                            $reportPhotos[] = base64_encode($encodedImage);
+                        } catch (\Exception $e) {
+                            // If optimization fails, try to get original as base64
+                            try {
+                                $reportPhotos[] = base64_encode(Storage::get($photoPath));
+                            } catch (\Exception $e) {
+                                // Skip this photo if we can't process it
+                                continue;
+                            }
                         }
-
-                        // Load and optimize image
-                        $image = $manager->read($fullPath);
-
-                        // Resize to max width of 800px for PDF (maintains aspect ratio)
-                        if ($image->width() > 800) {
-                            $image->scale(width: 800);
-                        }
-
-                        // Compress to JPEG with 70% quality for faster PDF embedding
-                        $optimized = $image->toJpeg(quality: 70)->toDataUri();
-
-                        $optimizedPhotos[$photoPath] = $optimized;
-                    } catch (\Exception $e) {
-                        // If optimization fails, skip this photo
-                        continue;
                     }
                 }
             }
+
+            $optimizedPhotos[$report->id] = $reportPhotos;
         }
 
         return $optimizedPhotos;
@@ -158,6 +139,6 @@ class ApprovedReports extends Component
 
     public function render()
     {
-        return view('livewire.approved-reports');
+        return view('livewire.verify-report');
     }
 }

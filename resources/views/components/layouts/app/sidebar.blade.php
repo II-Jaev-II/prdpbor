@@ -74,6 +74,9 @@
                         @endif
                     </div>
                 </flux:navlist.item>
+                <flux:navlist.item icon="clipboard-document-check" :href="route('superior.verify-report')"
+                    :current="request()->routeIs('superior.verify-report')" wire:navigate>{{ __('Verify Report') }}
+                </flux:navlist.item>
             </flux:navlist>
         @endif
 

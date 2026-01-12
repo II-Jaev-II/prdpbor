@@ -36,6 +36,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
     Route::get('/approval-reports', ApprovalReports::class)->name('approval-reports');
+    Route::get('/verify-report', \App\Livewire\VerifyReport::class)->name('verify-report');
     Route::get('/settings/e-signature', ESignature::class)->name('e-signature.edit');
 });
 
