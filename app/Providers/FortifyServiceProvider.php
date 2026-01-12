@@ -19,7 +19,10 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\RegisterResponse::class,
+            \App\Http\Responses\RegisterResponse::class
+        );
     }
 
     /**
@@ -44,6 +47,12 @@ class FortifyServiceProvider extends ServiceProvider
             $user = \App\Models\User::where('email', $request->email)->first();
 
             if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                // Check if user is approved
+                if (!$user->is_approved) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'email' => ['Your account is pending approval. Please contact the administrator.'],
+                    ]);
+                }
                 return $user;
             }
         });

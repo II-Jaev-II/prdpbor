@@ -33,6 +33,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::view('/dashboard', 'dashboards.admin')->name('dashboard');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pending-users', \App\Livewire\Admin\PendingUsers::class)->name('admin.pending-users');
+});
+
 Route::middleware(['auth', 'role:superior'])->prefix('superior')->name('superior.')->group(function () {
     Route::view('/dashboard', 'dashboards.user')->name('dashboard');
     Route::get('/approval-reports', ApprovalReports::class)->name('approval-reports');

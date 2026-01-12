@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\BackToOfficeReport;
 use App\Models\GeotagPhoto;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
+#[Title('Pending Reports')]
 class PendingReports extends Component
 {
     use WithFileUploads;

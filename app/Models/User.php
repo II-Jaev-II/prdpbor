@@ -26,6 +26,7 @@ class User extends Authenticatable
         'designation',
         'email',
         'role',
+        'is_approved',
         'superior_role',
         'unit_component',
         'e_signature',
@@ -55,6 +56,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'is_approved' => 'boolean',
         ];
     }
 

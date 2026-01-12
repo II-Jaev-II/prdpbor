@@ -6,7 +6,9 @@ use Livewire\Component;
 use App\Models\EnrollActivity as EnrollActivityModel;
 use App\Models\SubprojectList;
 use App\Models\User;
+use Livewire\Attributes\Title;
 
+#[Title('Enroll Activity')]
 class EnrollActivity extends Component
 {
     public $activities = [];

@@ -52,6 +52,30 @@
 
         <flux:spacer />
 
+        @if (auth()->user()->unit_component === 'ADMIN')
+            @php
+                $pendingUsersCount = \App\Models\User::query()
+                    ->where('is_approved', false)
+                    ->count();
+            @endphp
+            <flux:navlist variant="outline">
+                <flux:navlist.group :heading="__('Admin')" class="grid">
+                    <flux:navlist.item icon="user-plus" :href="route('admin.pending-users')"
+                        :current="request()->routeIs('admin.pending-users')" wire:navigate>
+                        <div class="flex items-center justify-between w-full">
+                            <span>{{ __('Pending Users') }}</span>
+                            @if ($pendingUsersCount > 0)
+                                <span
+                                    class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                                    {{ $pendingUsersCount }}
+                                </span>
+                            @endif
+                        </div>
+                    </flux:navlist.item>
+                </flux:navlist.group>
+            </flux:navlist>
+        @endif
+
         @if (auth()->user()->superior_role)
             @php
                 $pendingCount = \App\Models\BackToOfficeReport::query()

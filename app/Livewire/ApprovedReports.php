@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\BackToOfficeReport;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,7 @@ use BaconQrCode\Writer;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
+#[Title('Approved Reports')]
 class ApprovedReports extends Component
 {
     public bool $showViewModal = false;

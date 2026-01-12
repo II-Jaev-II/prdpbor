@@ -54,6 +54,17 @@
             <div class="space-y-4">
                 <p class="text-gray-600 dark:text-gray-400">You have full administrative access to the system.</p>
                 <div class="grid gap-4 md:grid-cols-2">
+                    <a href="{{ route('admin.pending-users') }}" class="flex items-center gap-3 rounded-lg border border-neutral-200 p-4 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-neutral-800">
+                        <div class="rounded-lg bg-orange-100 p-2 dark:bg-orange-900">
+                            <svg class="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">Pending Users</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Assign unit components</p>
+                        </div>
+                    </a>
                     <a href="#" class="flex items-center gap-3 rounded-lg border border-neutral-200 p-4 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-neutral-800">
                         <div class="rounded-lg bg-blue-100 p-2 dark:bg-blue-900">
                             <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
