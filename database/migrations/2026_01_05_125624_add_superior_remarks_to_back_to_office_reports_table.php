@@ -18,7 +18,15 @@ return new class extends Migration
         });
 
         // Update the status enum to include 'For Revision'
-        DB::statement("ALTER TABLE back_to_office_reports MODIFY COLUMN status ENUM('Pending', 'Approved', 'Rejected', 'For Revision') DEFAULT 'Pending'");
+        $driver = Schema::getConnection()->getDriverName();
+        
+        if ($driver === 'mysql') {
+            DB::statement("ALTER TABLE back_to_office_reports MODIFY COLUMN status ENUM('Pending', 'Approved', 'Rejected', 'For Revision') DEFAULT 'Pending'");
+        } else {
+            // For SQLite and other databases, we need to recreate the table
+            // SQLite doesn't support MODIFY COLUMN, but since status is already a string column,
+            // no modification is needed as it can already hold any of these values
+        }
     }
 
     /**
@@ -31,6 +39,10 @@ return new class extends Migration
         });
 
         // Restore original enum values
-        DB::statement("ALTER TABLE back_to_office_reports MODIFY COLUMN status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending'");
+        $driver = Schema::getConnection()->getDriverName();
+        
+        if ($driver === 'mysql') {
+            DB::statement("ALTER TABLE back_to_office_reports MODIFY COLUMN status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending'");
+        }
     }
 };

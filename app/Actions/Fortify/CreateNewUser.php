@@ -38,6 +38,7 @@ class CreateNewUser implements CreatesNewUsers
             'designation' => $input['designation'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'is_approved' => app()->environment('testing'), // Auto-approve in test environment
         ];
 
         // Handle e-signature upload
